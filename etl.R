@@ -32,3 +32,5 @@ df = vacant_parcels %>%
   left_join(res_addl) %>%
   left_join(res_detail) %>%
   left_join(taxable_object)
+
+saveRDS(df, "master_data.rds")
