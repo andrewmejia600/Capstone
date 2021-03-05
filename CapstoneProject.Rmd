@@ -12,30 +12,31 @@ library(ggplot2)
 
 
 ```{r}
-path = "/Users/tina/Documents/School/Capstone/Dallas Files/"
-#vacant_parcels <- read.csv(paste0(path, "CPAL/DCAD_parcels_vac.csv"), stringsAsFactors = F)
-#abatement_exempt <- read.csv(paste0(path, "DCAD2019/abatement_exempt.csv"), stringsAsFactors = F)
-account_apprl_year <- read.csv(paste0(path, "DCAD2019/account_apprl_year.csv"), stringsAsFactors = F)
-account_info <- read.csv(paste0(path, "DCAD2019/account_info.csv"), stringsAsFactors = F)
-#account_tif <- read.csv(paste0(path, "DCAD2019/account_tif_small.csv"), stringsAsFactors = F)
-account_exempt_value <- read.csv(paste0(path, "DCAD2019/acct_exempt_value.csv"), nrows=1000, stringsAsFactors = F)
-#account_exempt_value$ACCOUNT_NUM <- as.character(account_exempt_value$ACCOUNT_NUM)
-#applied_std_exempt <- read.csv(paste0(path, "DCAD2019/applied_std_exempt_small.csv"), stringsAsFactors = F)
-#com_detail <- read.csv(paste0(path, "DCAD2019/com_detail_small.csv"), stringsAsFactors = F)
-#land <- read.csv(paste0(path, "DCAD2019/land_small.csv"), stringsAsFactors = F)
-#land$ACCOUNT_NUM <- as.character(land$ACCOUNT_NUM)
-#multi_owner <- read.csv(paste0(path, "DCAD2019/multi_owner_small.csv"), stringsAsFactors = F)
-#res_addl <- read.csv(paste0(path, "DCAD2019/res_addl_small.csv"), stringsAsFactors = F)
-#res_detail <- read.csv(paste0(path, "DCAD2019/res_detail_small.csv"), stringsAsFactors = F)
-#taxable_object <- read.csv(paste0(path, "DCAD2019/taxable_object_small.csv"), stringsAsFactors = F)
-#taxable_object$ACCOUNT_NUM <- as.character(taxable_object$ACCOUNT_NUM)
-#taxable_object$TAX_OBJ_ID <- as.character(taxable_object$TAX_OBJ_ID)
+path = "Data/"
+vacant_parcels <- read.csv(paste0(path, "CPAL/DCAD_parcels_vac.csv"), stringsAsFactors = F)
+abatement_exempt <- read.csv(paste0(path, "DCAD2019/abatement_exempt.csv"), stringsAsFactors = F)
+account_apprl_year <- read.csv(paste0(path, "DCAD2019/account_apprl_year_small.csv"), stringsAsFactors = F)
+account_info <- read.csv(paste0(path, "DCAD2019/account_info_small.csv"), stringsAsFactors = F)
+account_tif <- read.csv(paste0(path, "DCAD2019/account_tif_small.csv"), stringsAsFactors = F)
+account_exempt_value <- read.csv(paste0(path, "DCAD2019/acct_exempt_value_small.csv"), stringsAsFactors = F)
+account_exempt_value$ACCOUNT_NUM <- as.character(account_exempt_value$ACCOUNT_NUM)
+applied_std_exempt <- read.csv(paste0(path, "DCAD2019/applied_std_exempt_small.csv"), stringsAsFactors = F)
+com_detail <- read.csv(paste0(path, "DCAD2019/com_detail_small.csv"), stringsAsFactors = F)
+land <- read.csv(paste0(path, "DCAD2019/land_small.csv"), stringsAsFactors = F)
+land$ACCOUNT_NUM <- as.character(land$ACCOUNT_NUM)
+multi_owner <- read.csv(paste0(path, "DCAD2019/multi_owner_small.csv"), stringsAsFactors = F)
+res_addl <- read.csv(paste0(path, "DCAD2019/res_addl_small.csv"), stringsAsFactors = F)
+res_detail <- read.csv(paste0(path, "DCAD2019/res_detail_small.csv"), stringsAsFactors = F)
+taxable_object <- read.csv(paste0(path, "DCAD2019/taxable_object_small.csv"), stringsAsFactors = F)
+taxable_object$ACCOUNT_NUM <- as.character(taxable_object$ACCOUNT_NUM)
+taxable_object$TAX_OBJ_ID <- as.character(taxable_object$TAX_OBJ_ID)
 ```
 
 ```{r}
 # Join all the files together
 
-df = account_apprl_year %>%
+df = vacant_parcels %>%
+  left_join(account_apprl_year) %>%
   left_join(account_info) %>%
   left_join(account_tif) %>%
   left_join(account_exempt_value) %>%
@@ -45,398 +46,39 @@ df = account_apprl_year %>%
   left_join(multi_owner) %>%
   left_join(res_addl) %>%
   left_join(res_detail) %>%
-  left_join(taxable_object) %>%
-  left_join(vacant_parcels)
+  left_join(taxable_object)
 
 ```
 
 ```{r}
-# df = account_info %>%
-#   left_join(account_apprl_year) 
-# 
-# summary(df$IMPR_VAL)
-# 
-# df_gg = df %>%
-#   filter(!is.na(IMPR_VAL)) %>%
-#   filter(IMPR_VAL < 37794550) %>%
-#   group_by(GIS_PARCEL_ID) %>%
-#   summarise_all(max) %>% #deduplicate by parcel id and keep the max of all other columns
-#   mutate(lt_1k_impr_val = ifelse(IMPR_VAL < 1000, "yes", "no"))
-# 
-# ggplot(df_gg, aes(x=lt_1k_impr_val, y = ..count.., fill=lt_1k_impr_val)) +
-#            geom_bar() + 
-#           ggtitle("Count of Parcels <$1000 Improvement Value")
+summary(account_apprl_year)
 ```
 
-```{r}
-# bar graph of things less than 2k improvement
-
-df = account_info %>%
-  left_join(account_apprl_year) 
-
-summary(factor(df$LMA))
-summary(df$IMPR_VAL)
-
-df_gg = df %>%
-  filter(!is.na(LMA)) %>%
-  filter(IMPR_VAL < 37794550) %>%
-  mutate(lt_1k_impr_val = ifelse(IMPR_VAL < 1000, "yes", "no"))
-
-ggplot(df_gg, aes(x=LMA, y = ..count.., fill=lt_1k_impr_val)) +
-           geom_bar() + 
-          ggtitle("Count of Parcels <$1000 Improvement Value by LMA")
-
-```
-
-
-
-
-```{r}
-# Plot count and percent of division (residential, commercial, bpp)
-
-# aggregate rows to one row per GIS_PARCEL_ID
-df_gg = df %>%
-  filter(IMPR_VAL < 37794550) %>%
-  group_by(GIS_PARCEL_ID) %>%
-  summarise(DIVISION_CD = max(DIVISION_CD))
-
-head(df_gg)
-
-df_gg %>% 
-  count(division = factor(DIVISION_CD)) %>% 
-  mutate(pct = prop.table(n)) %>%
-  ggplot(aes(x = division, y = pct, fill = division, label = paste(scales::percent(pct), "\n ( n=", n, ")"))) + 
-  geom_col(position = 'dodge') + 
-  geom_text(position = position_dodge(width = .9),    # move to center of bars
-            vjust = .5,    # nudge above top of bar
-            size = 3) + 
-  scale_y_continuous(labels = scales::percent) + 
-  ggtitle("Percent Parcels by Division \n (Residential, Commercial, and Business Personal Property)")
-```
-
-```{r}
-# Plot count and percent of parcels with <$1k improvement value vs >$1k
-
-# aggregate rows to one row per GIS_PARCEL_ID with max improvement value
-df_gg = df %>%
-  filter(!is.na(IMPR_VAL)) %>%
-  filter(IMPR_VAL < 37794550) %>%
-  filter(DIVISION_CD != "BPP") %>%
-  group_by(GIS_PARCEL_ID) %>%
-  summarise(IMPR_VAL = max(IMPR_VAL)) %>%
-  mutate(lt_1k_impr_val = ifelse(IMPR_VAL < 1000, "yes", "no"))
-
-head(df_gg)
-summary(df_gg$IMPR_VAL)
-
-df_gg %>% 
-  count(lt_1k_impr_val = factor(lt_1k_impr_val)) %>% 
-  mutate(pct = prop.table(n)) %>%
-  ggplot(aes(x = lt_1k_impr_val, y = pct, fill = lt_1k_impr_val, label = paste(scales::percent(pct), "\n ( n=", n, ")"))) + 
-  geom_col(position = 'dodge') + 
-  geom_text(position = position_dodge(width = .9),    # move to center of bars
-            vjust = .5,    # nudge above top of bar
-            size = 3) + 
-  scale_y_continuous(labels = scales::percent) + 
-  ggtitle("Percent Parcels Less Than $1k Improvement Value")
-```
-
-```{r}
-# How many <$1k improvement value land parcels are in each neighborhood?
-
-summary(factor(df$NBHD_CD))
-summary(df$IMPR_VAL)
-
-df_gg = df %>%
-  filter(!is.na(NBHD_CD)) %>%
-  filter(IMPR_VAL < 37794550) %>%
-  mutate(lt_1k_impr_val = ifelse(IMPR_VAL < 1000, "yes", "no")) 
-
-ggplot(df_gg, aes(x=NBHD_CD, y = ..count.., fill=lt_1k_impr_val)) +
-           geom_bar() + 
-          theme(axis.text.x = element_text(angle = 90)) +
-          ggtitle("Count of Parcels <$1000 Improvement Value by NBHD_CD")
-
-df_gg <- df %>% 
-  group_by(NBHD_CD) %>%
-  summarise(cnt_lt_1k_impr_val = sum(IMPR_VAL < 1000), cnt_gte_1k_impr_val = sum(IMPR_VAL > 1000), pct_low_impr = cnt_lt_1k_impr_val/(cnt_lt_1k_impr_val + cnt_gte_1k_impr_val))
-
-df_gg <- df_gg %>% 
-  filter(cnt_lt_1k_impr_val > 0) %>%
-  arrange(desc(cnt_lt_1k_impr_val)) %>% 
-  top_n(10, cnt_lt_1k_impr_val)
-  
-print(df_gg)
-
-library(tidyr)
-
-df_gg %>%
-  gather(Key, cnt_parcels, cnt_lt_1k_impr_val, cnt_gte_1k_impr_val) %>%
-  ggplot(aes(x = NBHD_CD, y = cnt_parcels, fill = Key, label = paste0("\n", scales::percent(pct_low_impr), "\n (n=", (cnt_parcels), ")\n"))) + 
-  geom_col(position = 'fill') + 
-  geom_text(position = 'fill',    # move to center of bars
-            vjust = 1,    # nudge above top of bar
-            size = 3) + 
-  scale_y_continuous(labels = scales::percent) + 
-  theme(axis.text.x = element_text(angle = 90)) +
-  ggtitle("Top 10 Neighborhoods With Parcels Less Than $1k Improvement Value")
-
-#dev.off()
-```
-
-
-```{r}
-# account_apprl_year X account_exempt
-# contains auxiliary data for each appraisal account in Account_Apprl_Year.
-
-df =  account_exempt_value %>%
-  left_join(account_apprl_year) 
-
-summary(factor(df$CITY_APPLD_VAL))
-summary(df$IMPR_VAL)
-
-df_gg = df %>%
-  #filter(!is.na(CITY_APPLD_VAL)) %>%
-  filter(IMPR_VAL < 37794550)
-
-#  select(CITY_APPLD_VAL, CNTY_APPLD_VAL, ISD_APPLD_VAL, HOSPITAL_APPLD_VAL, COLLEGE_APPLD_VAL, SPCL_APPLIED_VAL)
-summary(factor(df_gg$CITY_APPLD_VAL))
-ggplot(df_gg, aes(x=CITY_APPLD_VAL, y = IMPR_VAL, color=CITY_APPLD_VAL, alpha=.5)) +
-          geom_point()
-
-df_gg = df %>%
-  filter(!is.na(CITY_APPLD_VAL)) %>%
-  filter(IMPR_VAL < 1000)
-
-ggplot(df_gg, aes(x=CITY_APPLD_VAL, y = IMPR_VAL, color=CITY_APPLD_VAL, alpha=.5)) +
-          geom_point()
-
-```
-
-```{r}
-# account_info
-# contains auxiliary data for each appraisal account in Account_Apprl_Year.
-
-df = account_apprl_year %>%
-  left_join(account_info) 
-
-summary(factor(df$OWNER_CITY))
-
-df_gg = df %>%
-  filter(!is.na(OWNER_CITY)) %>%
-  filter(IMPR_VAL < 37794550)
-
-#  select(APPRAISAL_YR, DIVISION_CD, BIZ_NAME, OWNER_CITY, OWNER_STATE, OWNER_ZIPCODE, OWNER_COUNTRY, PROPERTY_CITY, PROPERTY_ZIPCODE, MAPSCO, NBHD_CD, LEGAL1, LEGAL2, DEED_TXFR_DATE, LMA, IMA)
-summary(factor(df$OWNER_CITY))
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=OWNER_CITY, alpha=.5)) +
-          geom_point()
-
-
-```
-
-```{r}
-head(df)
-summary(df)
-colSums(is.na(df))
-```
-
-There aren't many cities listed. We only want dallas anyways. But there are tons of NA.
-```{r}
-df_gg = df %>%
-  filter(!is.na(PROPERTY_CITY)) %>%
-  filter(IMPR_VAL < 37794550)
-
-#  select(APPRAISAL_YR, DIVISION_CD, BIZ_NAME, OWNER_CITY, OWNER_STATE, OWNER_ZIPCODE, OWNER_COUNTRY, PROPERTY_CITY, PROPERTY_ZIPCODE, MAPSCO, NBHD_CD, LEGAL1, LEGAL2, DEED_TXFR_DATE, LMA, IMA)
-summary(factor(df$PROPERTY_CITY))
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=PROPERTY_CITY, alpha=.5)) +
-          geom_point()
-
-# see the same for points with <2k improvement value
-df_gg = df %>%
-  filter(!is.na(PROPERTY_CITY)) %>%
-  filter(IMPR_VAL < 1000)
-
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=PROPERTY_CITY, alpha=.5)) +
-          geom_point()
-```
-
-There aren't many zipcodes for us to see 
-```{r}
-df_gg = df %>%
-  filter(!is.na(PROPERTY_ZIPCODE)) %>%
-  filter(IMPR_VAL < 37794550)
-
-#  select(APPRAISAL_YR, DIVISION_CD, BIZ_NAME, OWNER_CITY, OWNER_STATE, OWNER_ZIPCODE, OWNER_COUNTRY, PROPERTY_CITY, PROPERTY_ZIPCODE, MAPSCO, NBHD_CD, LEGAL1, LEGAL2, DEED_TXFR_DATE, LMA, IMA)
-summary(factor(df$PROPERTY_ZIPCODE))
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=PROPERTY_ZIPCODE, alpha=.5)) +
-          geom_point()
-
-# see the same for points with <2k improvement value
-df_gg = df %>%
-  filter(!is.na(PROPERTY_ZIPCODE)) %>%
-  filter(IMPR_VAL < 1000)
-
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=PROPERTY_ZIPCODE, alpha=.5)) +
-          geom_point()
-```
-
-Res have lower value than commercial
-
-```{r}
-df_gg = df %>%
-  filter(!is.na(DIVISION_CD)) %>%
-  filter(IMPR_VAL < 37794550)
-
-#  select(APPRAISAL_YR, DIVISION_CD, BIZ_NAME, OWNER_CITY, OWNER_STATE, OWNER_ZIPCODE, OWNER_COUNTRY, PROPERTY_CITY, PROPERTY_ZIPCODE, MAPSCO, NBHD_CD, LEGAL1, LEGAL2, DEED_TXFR_DATE, LMA, IMA)
-summary(factor(df$DIVISION_CD))
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=DIVISION_CD, alpha=.5)) +
-          geom_point()
-
-# see the same for points with <2k improvement value
-df_gg = df %>%
-  filter(!is.na(DIVISION_CD)) %>%
-  filter(IMPR_VAL < 1000)
-
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=DIVISION_CD, alpha=.5)) +
-          geom_point()
-```
-
-```{r}
-df_gg = df %>%
-  filter(!is.na(MAPSCO)) %>%
-  filter(IMPR_VAL < 37794550)
-
-#  select(APPRAISAL_YR, DIVISION_CD, BIZ_NAME, OWNER_CITY, OWNER_STATE, OWNER_ZIPCODE, OWNER_COUNTRY, PROPERTY_CITY, PROPERTY_ZIPCODE, MAPSCO, NBHD_CD, LEGAL1, LEGAL2, DEED_TXFR_DATE, LMA, IMA)
-summary(factor(df$MAPSCO))
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=MAPSCO, alpha=.5)) +
-          geom_point()
-
-# see the same for points with <2k improvement value
-df_gg = df %>%
-  filter(!is.na(MAPSCO)) %>%
-  filter(IMPR_VAL < 1000)
-
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=MAPSCO, alpha=.5)) +
-          geom_point()
-
-```
-
-```{r}
-df_gg = df %>%
-  filter(!is.na(NBHD_CD)) %>%
-  filter(IMPR_VAL < 37794550)
-
-#  select(APPRAISAL_YR, DIVISION_CD, BIZ_NAME, OWNER_CITY, OWNER_STATE, OWNER_ZIPCODE, OWNER_COUNTRY, PROPERTY_CITY, PROPERTY_ZIPCODE, MAPSCO, NBHD_CD, LEGAL1, LEGAL2, DEED_TXFR_DATE, LMA, IMA)
-summary(factor(df$NBHD_CD))
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=NBHD_CD, alpha=.5)) +
-          geom_point()
-
-# see the same for points with <2k improvement value
-df_gg = df %>%
-  filter(!is.na(NBHD_CD)) %>%
-  filter(IMPR_VAL < 1000)
-
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=NBHD_CD, alpha=.5)) +
-          geom_point()
-```
-
-```{r}
-df_gg = df %>%
-  filter(!is.na(LEGAL1)) %>%
-  filter(IMPR_VAL < 37794550)
-
-#  select(APPRAISAL_YR, DIVISION_CD, BIZ_NAME, OWNER_CITY, OWNER_STATE, OWNER_ZIPCODE, OWNER_COUNTRY, PROPERTY_CITY, PROPERTY_ZIPCODE, MAPSCO, NBHD_CD, LEGAL1, LEGAL2, DEED_TXFR_DATE, LMA, IMA)
-summary(factor(df$LEGAL1))
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=LEGAL1, alpha=.5)) +
-          geom_point()
-
-# see the same for points with <2k improvement value
-df_gg = df %>%
-  filter(!is.na(LEGAL1)) %>%
-  filter(IMPR_VAL < 1000)
-
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=LEGAL1, alpha=.5)) +
-          geom_point()
-```
-
-```{r}
-df_gg = df %>%
-  filter(!is.na(LMA)) %>%
-  filter(IMPR_VAL < 37794550)
-
-#  select(APPRAISAL_YR, DIVISION_CD, BIZ_NAME, OWNER_CITY, OWNER_STATE, OWNER_ZIPCODE, OWNER_COUNTRY, PROPERTY_CITY, PROPERTY_ZIPCODE, MAPSCO, NBHD_CD, LEGAL1, LEGAL2, DEED_TXFR_DATE, LMA, IMA)
-summary(factor(df$LMA))
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=LMA, alpha=.5)) +
-          geom_point()
-
-# see the same for points with <2k improvement value
-df_gg = df %>%
-  filter(!is.na(LMA)) %>%
-  filter(IMPR_VAL < 1000)
-
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=LMA, alpha=.5)) +
-          geom_point()
-```
-
-
-THERE IS NOTHING TO SEE IN IMA
-
-```{r}
-df_gg = df %>%
-  filter(!is.na(IMA)) %>%
-  filter(IMPR_VAL < 37794550)
-
-#  select(APPRAISAL_YR, DIVISION_CD, BIZ_NAME, OWNER_CITY, OWNER_STATE, OWNER_ZIPCODE, OWNER_COUNTRY, PROPERTY_CITY, PROPERTY_ZIPCODE, MAPSCO, NBHD_CD, LEGAL1, LEGAL2, DEED_TXFR_DATE, LMA, IMA)
-summary(factor(df$IMA))
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=IMA, alpha=.5)) +
-          geom_point()
-
-# see the same for points with <2k improvement value
-df_gg = df %>%
-  filter(!is.na(IMA)) %>%
-  filter(IMPR_VAL < 1000)
-
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=IMA, alpha=.5)) +
-          geom_point()
-```
-
-```{r}
-df_gg = df %>%
-  filter(!is.na(IMA)) %>%
-  filter(IMPR_VAL < 1000) 
-
-#  select(APPRAISAL_YR, DIVISION_CD, BIZ_NAME, OWNER_CITY, OWNER_STATE, OWNER_ZIPCODE, OWNER_COUNTRY, PROPERTY_CITY, PROPERTY_ZIPCODE, MAPSCO, NBHD_CD, LEGAL1, LEGAL2, DEED_TXFR_DATE, LMA, IMA)
-summary(factor(df$IMA))
-ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=IMA, alpha=.5)) +
-          geom_point()
-```
-
- almost all the columns highly correlate with tot_val and are very right skewed
 
 ```{r}
 # Abatement exempt
 # about properties for which abatements have been granted
-# head(abatement_exempt)
-# # df = abatement_exempt
-# columns_list = list(apprl_yr = abatement_exempt$APPRAISAL_YR, 
-#                     tot_val = abatement_exempt$TOT_VAL, 
-#                     city_eff_yr = abatement_exempt$CITY_EFF_YR, 
-#                     city_val_dif = abatement_exempt$CITY_VAL_DIF, 
-#                     cnty_val_dif = abatement_exempt$CNTY_VAL_DIF, 
-#                     isd_val_dif = abatement_exempt$ISD_VAL_DIF, 
-#                     coll_val_dif = abatement_exempt$COLL_VAL_DIF, 
-#                     spec_exemption_pct = abatement_exempt$SPEC_EXEMPTION_PCT, 
-#                     spec_val_dif = abatement_exempt$SPEC_VAL_DIF, 
-#                     spec_exemption_amt = abatement_exempt$SPEC_EXEMPTION_AMT)
-# i = 1
-# for(column in columns_list){
-#   name = names(columns_list)[i]
-#   plot(density(x=column), main = paste("Density Plot of", name))
-#   
-#   plot(x=abatement_exempt$TOT_VAL, y = column, main = paste("Scatterplot of tot_val vs", name))
-#   i = i+1
-# }
-# 
+head(abatement_exempt)
+df = abatement_exempt
+columns_list = list(apprl_yr = abatement_exempt$APPRAISAL_YR, 
+                    tot_val = abatement_exempt$TOT_VAL, 
+                    city_eff_yr = abatement_exempt$CITY_EFF_YR, 
+                    city_val_dif = abatement_exempt$CITY_VAL_DIF, 
+                    cnty_val_dif = abatement_exempt$CNTY_VAL_DIF, 
+                    isd_val_dif = abatement_exempt$ISD_VAL_DIF, 
+                    coll_val_dif = abatement_exempt$COLL_VAL_DIF, 
+                    spec_exemption_pct = abatement_exempt$SPEC_EXEMPTION_PCT, 
+                    spec_val_dif = abatement_exempt$SPEC_VAL_DIF, 
+                    spec_exemption_amt = abatement_exempt$SPEC_EXEMPTION_AMT)
+i = 1
+for(column in columns_list){
+  name = names(columns_list)[i]
+  plot(density(x=column), main = paste("Density Plot of", name))
+  
+  plot(x=abatement_exempt$TOT_VAL, y = column, main = paste("Scatterplot of tot_val vs", name))
+  i = i+1
+}
+
 
 ```
 
@@ -446,72 +88,35 @@ ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=IMA, alpha=.5)) +
 # primary or central table in this dataset, it contains summary information about all appraisal accounts.
 
 
-#head(account_apprl_year)
-#df = account_apprl_year
-
-# columns_list = list(impr_val = df$IMPR_VAL,
-#   land_val = df$LAND_VAL,
-#   tot_val = df$TOT_VAL,
-#   hmstd_cap_val = df$HMSTD_CAP_VAL,
-#   prev_reval_yr = df$PREV_REVAL_YR,
-#   prev_mkt_val = df$PREV_MKT_VAL,
-#   city_taxable_val = df$CITY_TAXABLE_VAL,
-#   county_taxable_val = df$COUNTY_TAXABLE_VAL,
-#   isd_taxable_val = df$ISD_TAXABLE_VAL,
-#   hospital_taxable_val = df$HOSPITAL_TAXABLE_VAL,
-#   college_taxable_val = df$COLLEGE_TAXABLE_VAL,
-#   county_ceiling_value = df$COUNTY_CEILING_VALUE,
-#   isd_ceiling_value = df$ISD_CEILING_VALUE,
-#   appraisal_meth_cd = df$APPRAISAL_METH_CD
-#   )
-# 
-# i = 1
-# for(column in columns_list){
-#   name = names(columns_list)[i]
-#   gg_df = data.frame(x = column, tot_val = df$TOT_VAL)
-#   #print(head(gg_df))
-#   print(ggplot(gg_df, aes(x=x, y=tot_val)) + 
-#            geom_point() +
-#           ggtitle(paste("Scatterplot of", name)))
-#   
-#   #plot(density(x=column), main = paste("Density Plot of", name))
-#   
-#   #plot(x=df$TOT_VAL, y = column, main = paste("Scatterplot of tot_val vs", name))
-#   i = i+1
-# }
+head(account_apprl_year)
+df = account_apprl_year
+columns_list = list(apprl_yr = abatement_exempt$APPRAISAL_YR, 
+                    tot_val = abatement_exempt$TOT_VAL, 
+                    city_eff_yr = abatement_exempt$CITY_EFF_YR, 
+                    city_val_dif = abatement_exempt$CITY_VAL_DIF, 
+                    cnty_val_dif = abatement_exempt$CNTY_VAL_DIF, 
+                    isd_val_dif = abatement_exempt$ISD_VAL_DIF, 
+                    coll_val_dif = abatement_exempt$COLL_VAL_DIF, 
+                    spec_exemption_pct = abatement_exempt$SPEC_EXEMPTION_PCT, 
+                    spec_val_dif = abatement_exempt$SPEC_VAL_DIF, 
+                    spec_exemption_amt = abatement_exempt$SPEC_EXEMPTION_AMT)
+i = 1
+for(column in columns_list){
+  name = names(columns_list)[i]
+  plot(density(x=column), main = paste("Density Plot of", name))
+  
+  plot(x=abatement_exempt$TOT_VAL, y = column, main = paste("Scatterplot of tot_val vs", name))
+  i = i+1
+}
 
 
-```
-
-```{r}
-summary(account_info)
 ```
 
 
 
 ```{r}
-# Loop
-
-# i = 1
-# for(column in names(df)){
-#   print(column)
-#   name = column
-#   print(length(df[[column]]))
-#   print(length(df$OWNER_CITY))
-#   gg_df = data.frame(x = df[[column]], OWNER_CITY = df$OWNER_CITY)
-# 
-#   print(head(gg_df))
-#   print(ggplot(gg_df, aes(x=x, y = ..count.., fill=x)) +
-#           geom_bar())
-#   #print(ggplot(gg_df, aes(x=x, y= ..count..)) +
-#   #  geom_bar(aes(fill = OWNER_CITY), position = "dodge") + 
-#   #  ggtitle(paste("Scatterplot of", name)))
-#   
-#   #plot(density(x=column), main = paste("Density Plot of", name))
-#   
-#   #plot(x=df$TOT_VAL, y = column, main = paste("Scatterplot of tot_val vs", name))
-#   i = i+1
-# }
+# account_info
+# contains auxiliary data for each appraisal account in Account_Apprl_Year.
 ```
 
 
