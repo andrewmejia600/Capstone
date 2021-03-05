@@ -35,8 +35,7 @@ account_exempt_value <- read.csv(paste0(path, "DCAD2019/acct_exempt_value.csv"),
 ```{r}
 # Join all the files together
 
-df = vacant_parcels %>%
-  left_join(account_apprl_year) %>%
+df = account_apprl_year %>%
   left_join(account_info) %>%
   left_join(account_tif) %>%
   left_join(account_exempt_value) %>%
@@ -46,7 +45,8 @@ df = vacant_parcels %>%
   left_join(multi_owner) %>%
   left_join(res_addl) %>%
   left_join(res_detail) %>%
-  left_join(taxable_object)
+  left_join(taxable_object) %>%
+  left_join(vacant_parcels)
 
 ```
 
