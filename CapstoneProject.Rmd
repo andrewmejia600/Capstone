@@ -54,31 +54,32 @@ df = vacant_parcels %>%
 summary(account_apprl_year)
 ```
 
+ almost all the columns highly correlate with tot_val and are very right skewed
 
 ```{r}
 # Abatement exempt
 # about properties for which abatements have been granted
-head(abatement_exempt)
-df = abatement_exempt
-columns_list = list(apprl_yr = abatement_exempt$APPRAISAL_YR, 
-                    tot_val = abatement_exempt$TOT_VAL, 
-                    city_eff_yr = abatement_exempt$CITY_EFF_YR, 
-                    city_val_dif = abatement_exempt$CITY_VAL_DIF, 
-                    cnty_val_dif = abatement_exempt$CNTY_VAL_DIF, 
-                    isd_val_dif = abatement_exempt$ISD_VAL_DIF, 
-                    coll_val_dif = abatement_exempt$COLL_VAL_DIF, 
-                    spec_exemption_pct = abatement_exempt$SPEC_EXEMPTION_PCT, 
-                    spec_val_dif = abatement_exempt$SPEC_VAL_DIF, 
-                    spec_exemption_amt = abatement_exempt$SPEC_EXEMPTION_AMT)
-i = 1
-for(column in columns_list){
-  name = names(columns_list)[i]
-  plot(density(x=column), main = paste("Density Plot of", name))
-  
-  plot(x=abatement_exempt$TOT_VAL, y = column, main = paste("Scatterplot of tot_val vs", name))
-  i = i+1
-}
-
+# head(abatement_exempt)
+# # df = abatement_exempt
+# columns_list = list(apprl_yr = abatement_exempt$APPRAISAL_YR, 
+#                     tot_val = abatement_exempt$TOT_VAL, 
+#                     city_eff_yr = abatement_exempt$CITY_EFF_YR, 
+#                     city_val_dif = abatement_exempt$CITY_VAL_DIF, 
+#                     cnty_val_dif = abatement_exempt$CNTY_VAL_DIF, 
+#                     isd_val_dif = abatement_exempt$ISD_VAL_DIF, 
+#                     coll_val_dif = abatement_exempt$COLL_VAL_DIF, 
+#                     spec_exemption_pct = abatement_exempt$SPEC_EXEMPTION_PCT, 
+#                     spec_val_dif = abatement_exempt$SPEC_VAL_DIF, 
+#                     spec_exemption_amt = abatement_exempt$SPEC_EXEMPTION_AMT)
+# i = 1
+# for(column in columns_list){
+#   name = names(columns_list)[i]
+#   plot(density(x=column), main = paste("Density Plot of", name))
+#   
+#   plot(x=abatement_exempt$TOT_VAL, y = column, main = paste("Scatterplot of tot_val vs", name))
+#   i = i+1
+# }
+# 
 
 ```
 
@@ -88,35 +89,69 @@ for(column in columns_list){
 # primary or central table in this dataset, it contains summary information about all appraisal accounts.
 
 
-head(account_apprl_year)
-df = account_apprl_year
-columns_list = list(apprl_yr = abatement_exempt$APPRAISAL_YR, 
-                    tot_val = abatement_exempt$TOT_VAL, 
-                    city_eff_yr = abatement_exempt$CITY_EFF_YR, 
-                    city_val_dif = abatement_exempt$CITY_VAL_DIF, 
-                    cnty_val_dif = abatement_exempt$CNTY_VAL_DIF, 
-                    isd_val_dif = abatement_exempt$ISD_VAL_DIF, 
-                    coll_val_dif = abatement_exempt$COLL_VAL_DIF, 
-                    spec_exemption_pct = abatement_exempt$SPEC_EXEMPTION_PCT, 
-                    spec_val_dif = abatement_exempt$SPEC_VAL_DIF, 
-                    spec_exemption_amt = abatement_exempt$SPEC_EXEMPTION_AMT)
-i = 1
-for(column in columns_list){
-  name = names(columns_list)[i]
-  plot(density(x=column), main = paste("Density Plot of", name))
-  
-  plot(x=abatement_exempt$TOT_VAL, y = column, main = paste("Scatterplot of tot_val vs", name))
-  i = i+1
-}
+#head(account_apprl_year)
+#df = account_apprl_year
+
+# columns_list = list(impr_val = df$IMPR_VAL,
+#   land_val = df$LAND_VAL,
+#   tot_val = df$TOT_VAL,
+#   hmstd_cap_val = df$HMSTD_CAP_VAL,
+#   prev_reval_yr = df$PREV_REVAL_YR,
+#   prev_mkt_val = df$PREV_MKT_VAL,
+#   city_taxable_val = df$CITY_TAXABLE_VAL,
+#   county_taxable_val = df$COUNTY_TAXABLE_VAL,
+#   isd_taxable_val = df$ISD_TAXABLE_VAL,
+#   hospital_taxable_val = df$HOSPITAL_TAXABLE_VAL,
+#   college_taxable_val = df$COLLEGE_TAXABLE_VAL,
+#   county_ceiling_value = df$COUNTY_CEILING_VALUE,
+#   isd_ceiling_value = df$ISD_CEILING_VALUE,
+#   appraisal_meth_cd = df$APPRAISAL_METH_CD
+#   )
+# 
+# i = 1
+# for(column in columns_list){
+#   name = names(columns_list)[i]
+#   gg_df = data.frame(x = column, tot_val = df$TOT_VAL)
+#   #print(head(gg_df))
+#   print(ggplot(gg_df, aes(x=x, y=tot_val)) + 
+#            geom_point() +
+#           ggtitle(paste("Scatterplot of", name)))
+#   
+#   #plot(density(x=column), main = paste("Density Plot of", name))
+#   
+#   #plot(x=df$TOT_VAL, y = column, main = paste("Scatterplot of tot_val vs", name))
+#   i = i+1
+# }
 
 
 ```
 
+```{r}
+summary(account_info)
+```
 
 
 ```{r}
 # account_info
 # contains auxiliary data for each appraisal account in Account_Apprl_Year.
+
+
+
+i = 1
+for(column in names(df)){
+  print(column)
+  name = column
+  gg_df = data.frame(x = df[[column]], tot_val = df$TOT_VAL)
+  print(head(gg_df))
+  print(ggplot(gg_df, aes(x=x, y=tot_val)) + 
+           geom_point() +
+          ggtitle(paste("Scatterplot of", name)))
+  
+  #plot(density(x=column), main = paste("Density Plot of", name))
+  
+  #plot(x=df$TOT_VAL, y = column, main = paste("Scatterplot of tot_val vs", name))
+  i = i+1
+}
 ```
 
 
