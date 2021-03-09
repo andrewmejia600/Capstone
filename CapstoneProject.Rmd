@@ -51,6 +51,27 @@ applied_std_exempt <- read.csv(paste0(path, "DCAD2019/applied_std_exempt_small.c
 
 ```
 
+
+```{r}
+# bar graph
+
+df =  account_exempt_value %>%
+  left_join(account_apprl_year) 
+
+summary(factor(df$CITY_APPLD_VAL))
+summary(df$IMPR_VAL)
+
+df_gg = df %>%
+  #filter(!is.na(CITY_APPLD_VAL)) %>%
+  filter(IMPR_VAL < 37794550) %>%
+  mutate(lt_2k_impr_val = ifelse(IMPR_VAL < 2000, "yes", "no"))
+
+ggplot(df_gg, aes(x=NBHD_CD, y = ..count.., fill=lt_2k_impr_val)) +
+           geom_bar()
+
+```
+
+
 ```{r}
 # account_apprl_year X account_exempt
 # contains auxiliary data for each appraisal account in Account_Apprl_Year.
@@ -352,7 +373,6 @@ ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=IMA, alpha=.5)) +
 ```{r}
 summary(account_info)
 ```
-
 
 
 
