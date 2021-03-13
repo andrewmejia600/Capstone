@@ -14,13 +14,13 @@ library(ggplot2)
 ```{r}
 path = "/Users/tina/Documents/School/Capstone/Dallas Files/"
 #vacant_parcels <- read.csv(paste0(path, "CPAL/DCAD_parcels_vac.csv"), stringsAsFactors = F)
-abatement_exempt <- read.csv(paste0(path, "DCAD2019/abatement_exempt.csv"), stringsAsFactors = F)
-account_apprl_year <- read.csv(paste0(path, "DCAD2020_CURRENT/account_apprl_year.csv"), nrows=10000, stringsAsFactors = F)
-account_info <- read.csv(paste0(path, "DCAD2020_CURRENT/account_info.csv"), nrows=10000, stringsAsFactors = F)
-account_tif <- read.csv(paste0(path, "DCAD2019/account_tif_small.csv"), stringsAsFactors = F)
-account_exempt_value <- read.csv(paste0(path, "DCAD2020_CURRENT/acct_exempt_value.csv"), nrows=10000, stringsAsFactors = F)
-account_exempt_value$ACCOUNT_NUM <- as.character(account_exempt_value$ACCOUNT_NUM)
-applied_std_exempt <- read.csv(paste0(path, "DCAD2019/applied_std_exempt_small.csv"), stringsAsFactors = F)
+#abatement_exempt <- read.csv(paste0(path, "DCAD2019/abatement_exempt.csv"), stringsAsFactors = F)
+account_apprl_year <- read.csv(paste0(path, "DCAD2019/account_apprl_year.csv"), stringsAsFactors = F)
+account_info <- read.csv(paste0(path, "DCAD2019/account_info.csv"), stringsAsFactors = F)
+#account_tif <- read.csv(paste0(path, "DCAD2019/account_tif_small.csv"), stringsAsFactors = F)
+account_exempt_value <- read.csv(paste0(path, "DCAD2019/acct_exempt_value.csv"), nrows=1000, stringsAsFactors = F)
+#account_exempt_value$ACCOUNT_NUM <- as.character(account_exempt_value$ACCOUNT_NUM)
+#applied_std_exempt <- read.csv(paste0(path, "DCAD2019/applied_std_exempt_small.csv"), stringsAsFactors = F)
 #com_detail <- read.csv(paste0(path, "DCAD2019/com_detail_small.csv"), stringsAsFactors = F)
 #land <- read.csv(paste0(path, "DCAD2019/land_small.csv"), stringsAsFactors = F)
 #land$ACCOUNT_NUM <- as.character(land$ACCOUNT_NUM)
@@ -51,24 +51,138 @@ applied_std_exempt <- read.csv(paste0(path, "DCAD2019/applied_std_exempt_small.c
 
 ```
 
+```{r}
+# df = account_info %>%
+#   left_join(account_apprl_year) 
+# 
+# summary(df$IMPR_VAL)
+# 
+# df_gg = df %>%
+#   filter(!is.na(IMPR_VAL)) %>%
+#   filter(IMPR_VAL < 37794550) %>%
+#   group_by(GIS_PARCEL_ID) %>%
+#   summarise_all(max) %>% #deduplicate by parcel id and keep the max of all other columns
+#   mutate(lt_1k_impr_val = ifelse(IMPR_VAL < 1000, "yes", "no"))
+# 
+# ggplot(df_gg, aes(x=lt_1k_impr_val, y = ..count.., fill=lt_1k_impr_val)) +
+#            geom_bar() + 
+#           ggtitle("Count of Parcels <$1000 Improvement Value")
+```
 
 ```{r}
-# bar graph
+# bar graph of things less than 2k improvement
 
-df =  account_exempt_value %>%
+df = account_info %>%
   left_join(account_apprl_year) 
 
-summary(factor(df$CITY_APPLD_VAL))
+summary(factor(df$LMA))
 summary(df$IMPR_VAL)
 
 df_gg = df %>%
-  #filter(!is.na(CITY_APPLD_VAL)) %>%
+  filter(!is.na(LMA)) %>%
   filter(IMPR_VAL < 37794550) %>%
-  mutate(lt_2k_impr_val = ifelse(IMPR_VAL < 2000, "yes", "no"))
+  mutate(lt_1k_impr_val = ifelse(IMPR_VAL < 1000, "yes", "no"))
 
-ggplot(df_gg, aes(x=NBHD_CD, y = ..count.., fill=lt_2k_impr_val)) +
-           geom_bar()
+ggplot(df_gg, aes(x=LMA, y = ..count.., fill=lt_1k_impr_val)) +
+           geom_bar() + 
+          ggtitle("Count of Parcels <$1000 Improvement Value by LMA")
 
+```
+
+
+
+
+```{r}
+# Plot count and percent of division (residential, commercial, bpp)
+
+# aggregate rows to one row per GIS_PARCEL_ID
+df_gg = df %>%
+  filter(IMPR_VAL < 37794550) %>%
+  group_by(GIS_PARCEL_ID) %>%
+  summarise(DIVISION_CD = max(DIVISION_CD))
+
+head(df_gg)
+
+df_gg %>% 
+  count(division = factor(DIVISION_CD)) %>% 
+  mutate(pct = prop.table(n)) %>%
+  ggplot(aes(x = division, y = pct, fill = division, label = paste(scales::percent(pct), "\n ( n=", n, ")"))) + 
+  geom_col(position = 'dodge') + 
+  geom_text(position = position_dodge(width = .9),    # move to center of bars
+            vjust = .5,    # nudge above top of bar
+            size = 3) + 
+  scale_y_continuous(labels = scales::percent) + 
+  ggtitle("Percent Parcels by Division \n (Residential, Commercial, and Business Personal Property)")
+```
+
+```{r}
+# Plot count and percent of parcels with <$1k improvement value vs >$1k
+
+# aggregate rows to one row per GIS_PARCEL_ID with max improvement value
+df_gg = df %>%
+  filter(!is.na(IMPR_VAL)) %>%
+  filter(IMPR_VAL < 37794550) %>%
+  filter(DIVISION_CD != "BPP") %>%
+  group_by(GIS_PARCEL_ID) %>%
+  summarise(IMPR_VAL = max(IMPR_VAL)) %>%
+  mutate(lt_1k_impr_val = ifelse(IMPR_VAL < 1000, "yes", "no"))
+
+head(df_gg)
+summary(df_gg$IMPR_VAL)
+
+df_gg %>% 
+  count(lt_1k_impr_val = factor(lt_1k_impr_val)) %>% 
+  mutate(pct = prop.table(n)) %>%
+  ggplot(aes(x = lt_1k_impr_val, y = pct, fill = lt_1k_impr_val, label = paste(scales::percent(pct), "\n ( n=", n, ")"))) + 
+  geom_col(position = 'dodge') + 
+  geom_text(position = position_dodge(width = .9),    # move to center of bars
+            vjust = .5,    # nudge above top of bar
+            size = 3) + 
+  scale_y_continuous(labels = scales::percent) + 
+  ggtitle("Percent Parcels Less Than $1k Improvement Value")
+```
+
+```{r}
+# How many <$1k improvement value land parcels are in each neighborhood?
+
+summary(factor(df$NBHD_CD))
+summary(df$IMPR_VAL)
+
+df_gg = df %>%
+  filter(!is.na(NBHD_CD)) %>%
+  filter(IMPR_VAL < 37794550) %>%
+  mutate(lt_1k_impr_val = ifelse(IMPR_VAL < 1000, "yes", "no")) 
+
+ggplot(df_gg, aes(x=NBHD_CD, y = ..count.., fill=lt_1k_impr_val)) +
+           geom_bar() + 
+          theme(axis.text.x = element_text(angle = 90)) +
+          ggtitle("Count of Parcels <$1000 Improvement Value by NBHD_CD")
+
+df_gg <- df %>% 
+  group_by(NBHD_CD) %>%
+  summarise(cnt_lt_1k_impr_val = sum(IMPR_VAL < 1000), cnt_gte_1k_impr_val = sum(IMPR_VAL > 1000), pct_low_impr = cnt_lt_1k_impr_val/(cnt_lt_1k_impr_val + cnt_gte_1k_impr_val))
+
+df_gg <- df_gg %>% 
+  filter(cnt_lt_1k_impr_val > 0) %>%
+  arrange(desc(cnt_lt_1k_impr_val)) %>% 
+  top_n(10, cnt_lt_1k_impr_val)
+  
+print(df_gg)
+
+library(tidyr)
+
+df_gg %>%
+  gather(Key, cnt_parcels, cnt_lt_1k_impr_val, cnt_gte_1k_impr_val) %>%
+  ggplot(aes(x = NBHD_CD, y = cnt_parcels, fill = Key, label = paste0("\n", scales::percent(pct_low_impr), "\n (n=", (cnt_parcels), ")\n"))) + 
+  geom_col(position = 'fill') + 
+  geom_text(position = 'fill',    # move to center of bars
+            vjust = 1,    # nudge above top of bar
+            size = 3) + 
+  scale_y_continuous(labels = scales::percent) + 
+  theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 Neighborhoods With Parcels Less Than $1k Improvement Value")
+
+#dev.off()
 ```
 
 
@@ -93,7 +207,7 @@ ggplot(df_gg, aes(x=CITY_APPLD_VAL, y = IMPR_VAL, color=CITY_APPLD_VAL, alpha=.5
 
 df_gg = df %>%
   filter(!is.na(CITY_APPLD_VAL)) %>%
-  filter(IMPR_VAL < 2000)
+  filter(IMPR_VAL < 1000)
 
 ggplot(df_gg, aes(x=CITY_APPLD_VAL, y = IMPR_VAL, color=CITY_APPLD_VAL, alpha=.5)) +
           geom_point()
@@ -141,7 +255,7 @@ ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=PROPERTY_CITY, alpha=.5)) +
 # see the same for points with <2k improvement value
 df_gg = df %>%
   filter(!is.na(PROPERTY_CITY)) %>%
-  filter(IMPR_VAL < 2000)
+  filter(IMPR_VAL < 1000)
 
 ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=PROPERTY_CITY, alpha=.5)) +
           geom_point()
@@ -161,7 +275,7 @@ ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=PROPERTY_ZIPCODE, alpha=.5)) +
 # see the same for points with <2k improvement value
 df_gg = df %>%
   filter(!is.na(PROPERTY_ZIPCODE)) %>%
-  filter(IMPR_VAL < 2000)
+  filter(IMPR_VAL < 1000)
 
 ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=PROPERTY_ZIPCODE, alpha=.5)) +
           geom_point()
@@ -182,7 +296,7 @@ ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=DIVISION_CD, alpha=.5)) +
 # see the same for points with <2k improvement value
 df_gg = df %>%
   filter(!is.na(DIVISION_CD)) %>%
-  filter(IMPR_VAL < 2000)
+  filter(IMPR_VAL < 1000)
 
 ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=DIVISION_CD, alpha=.5)) +
           geom_point()
@@ -201,7 +315,7 @@ ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=MAPSCO, alpha=.5)) +
 # see the same for points with <2k improvement value
 df_gg = df %>%
   filter(!is.na(MAPSCO)) %>%
-  filter(IMPR_VAL < 2000)
+  filter(IMPR_VAL < 1000)
 
 ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=MAPSCO, alpha=.5)) +
           geom_point()
@@ -221,7 +335,7 @@ ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=NBHD_CD, alpha=.5)) +
 # see the same for points with <2k improvement value
 df_gg = df %>%
   filter(!is.na(NBHD_CD)) %>%
-  filter(IMPR_VAL < 2000)
+  filter(IMPR_VAL < 1000)
 
 ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=NBHD_CD, alpha=.5)) +
           geom_point()
@@ -240,7 +354,7 @@ ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=LEGAL1, alpha=.5)) +
 # see the same for points with <2k improvement value
 df_gg = df %>%
   filter(!is.na(LEGAL1)) %>%
-  filter(IMPR_VAL < 2000)
+  filter(IMPR_VAL < 1000)
 
 ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=LEGAL1, alpha=.5)) +
           geom_point()
@@ -259,7 +373,7 @@ ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=LMA, alpha=.5)) +
 # see the same for points with <2k improvement value
 df_gg = df %>%
   filter(!is.na(LMA)) %>%
-  filter(IMPR_VAL < 2000)
+  filter(IMPR_VAL < 1000)
 
 ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=LMA, alpha=.5)) +
           geom_point()
@@ -281,7 +395,7 @@ ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=IMA, alpha=.5)) +
 # see the same for points with <2k improvement value
 df_gg = df %>%
   filter(!is.na(IMA)) %>%
-  filter(IMPR_VAL < 2000)
+  filter(IMPR_VAL < 1000)
 
 ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=IMA, alpha=.5)) +
           geom_point()
@@ -290,7 +404,7 @@ ggplot(df_gg, aes(x=TOT_VAL, y = IMPR_VAL, color=IMA, alpha=.5)) +
 ```{r}
 df_gg = df %>%
   filter(!is.na(IMA)) %>%
-  filter(IMPR_VAL < 2000) 
+  filter(IMPR_VAL < 1000) 
 
 #  select(APPRAISAL_YR, DIVISION_CD, BIZ_NAME, OWNER_CITY, OWNER_STATE, OWNER_ZIPCODE, OWNER_COUNTRY, PROPERTY_CITY, PROPERTY_ZIPCODE, MAPSCO, NBHD_CD, LEGAL1, LEGAL2, DEED_TXFR_DATE, LMA, IMA)
 summary(factor(df$IMA))
