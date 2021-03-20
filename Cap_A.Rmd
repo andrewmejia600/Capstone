@@ -20,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r library, include=FALSE, warning=FALSE, options("rgdal_show_exportToProj4_warnings"="none")}
-library(tidyverse)
+
 library(rpart)
 library(tm)
 library(tidyverse)
@@ -35,7 +35,6 @@ library(rpart)
 library(rattle)
 library(rpart.plot)
 library(RColorBrewer)
-library(dplyr)
 library(ggraph)
 library(igraph)
 library(e1071)
@@ -113,5 +112,20 @@ DCAD_aprl_year_filtered_by_clipped_parcels_annotated_joined_to_co['CO_ON_ACCOUNT
 #Get a count of accounts with a CO
 DCAD_aprl_year_filtered_by_clipped_parcels_annotated_joined_to_co %>% group_by(Acct.x) %>% tally(CO_ON_ACCOUNT)
 
+```
+
+
+
+```{r}
+# Create a column for type of permit for most recent permit
+
+building_permits = read.csv("Data/CPAL/building_permits.csv")
+
+building_permits %>%
+  select(Address, X, Y, Permit_Type, PermitDate, Mapsco) %>%
+  mutate(PermitDate = as.Date(substr(PermitDate, 1, 10))) %>%
+  group_by(Address, X, Y) %>%
+  filter(PermitDate == max(PermitDate)) %>%
+  mutate(Days_Since_Permit =  Sys.Date() - PermitDate)
 ```
 
