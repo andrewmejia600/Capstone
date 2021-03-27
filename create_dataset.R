@@ -15,7 +15,8 @@ CPAL_label_annotations["VAC_PAR"] = 1
 # all the dcad data from which to obtain a list of duplicate accounts
 DCAD_all = read.csv("my_dcad_file.csv")
 DCAD_all = DCAD_all %>%
-  left_join("other_dcad_data")
+  select("Acct") %>%
+  rbind("other_dcad_data")
 
 # Make list of accounts that have no 
 duplicate_accounts = CPAL_label_annotations %>%
