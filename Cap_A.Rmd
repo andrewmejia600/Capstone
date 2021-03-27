@@ -52,8 +52,8 @@ library(ggmap)
 ```
 
 ```{r}
-setwd("/home/andrew/Desktop/Dallas Files/")
-file_direct = '/home/andrew/Desktop/Dallas Files/GIS_PACKAGE_FILES_TO_CSV/' 
+#setwd("/home/andrew/Desktop/Dallas Files/")
+file_direct = '/Users/tina/Documents/School/Capstone/Dallas Files/GIS_PACKAGE_FILES_TO_CSV/' 
 
 #Shape layer of all parcels in the City of Dallas
 clipped_parcels_by_dallas_geomtry = read.csv(file=paste0(file_direct,'Clipped_Parcels_by_Dallas_Simple.csv'))
