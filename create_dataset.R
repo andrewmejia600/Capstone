@@ -12,11 +12,20 @@ df = read.csv(file=paste0(file_direct,'Clipped_Parcels_by_Dallas_Simple.csv'), s
 CPAL_label_annotations = read.csv(file=paste0(file_direct,'Clipped_Parcels_by_Dallas_Simple_vac_pts_annotations.csv'), stringsAsFactors = FALSE)
 CPAL_label_annotations["VAC_PAR"] = 1
 
+# all the dcad data from which to obtain a list of duplicate accounts
+DCAD_all = read.csv("my_dcad_file.csv")
+DCAD_all = DCAD_all %>%
+  left_join("other_dcad_data")
 
-duplicate_accounts = c()
+# Make list of accounts that have no 
+duplicate_accounts = CPAL_label_annotations %>%
+  group_by(ACCOUNT_NUM) %>%
+  count() %>%
+  filter(n>1) 
+
 
 df = df %>% 
-    filter(!(Acct %in% duplicate_accounts)) %>%
+    filter(!(Acct %in% duplicate_accounts$Acct)) %>%
     left_join(CPAL_label_annotations, by = c("Acct" = "ACCOUNT_NUM")) 
 #    left_join(CO) %>%
 #    left_join(Building_permits) %>%
