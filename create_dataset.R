@@ -24,10 +24,33 @@ duplicate_accounts = CPAL_label_annotations %>%
   count() %>%
   filter(n>1) 
 
+# add building permit features
+building_permits = read.csv(file=paste0(file_direct, 'Clipped_Parcels_by_Dallas_Simple_inner_join_to_Clipped_2019_Build_Perm.csv'), stringsAsFactors = FALSE, nrows=10000)
+building_permit_features = building_permits %>%
+  select(Acct, Permit_Type, PermitDate, Mapsco) %>%
+  mutate(Permit_Date = as.Date(substr(PermitDate, 1, 10))) %>%
+  group_by(Acct) %>%
+  add_tally(name="Count_Permits") %>%
+  filter(PermitDate == max(PermitDate)) %>%
+  mutate(Days_Since_Permit =  Sys.Date() - Permit_Date)
+
+# add co features
+cert_occupancy = read.csv(file=paste0(file_direct, 'Clipped_Parcels_by_Dallas_Simple_inner_join_to_Clipped_2019_co.csv'), stringsAsFactors = FALSE, nrows=1000)
+cert_occupancy_features = cert_occupancy %>%
+  mutate(CO_Issue_Date = as.Date(ISSUE.DATE, "%m/%d/%Y")) %>%
+  mutate(Days_From_CO_Appro_To_Issue = CO_Issue_Date - as.Date(DATE.APPRO, "%m/%d/%Y")) %>%
+  group_by(Acct) %>%
+  add_tally(name="Count_COs") %>%
+  filter(CO_Issue_Date == max(CO_Issue_Date)) %>%
+  mutate(Days_Since_Issue =  Sys.Date() - CO_Issue_Date) %>%
+  select(Acct, CO_Issue_Date, Days_From_CO_Appro_To_Issue, Count_COs, Days_Since_Issue, CO_Type=TYPE.OF.CO, Sq_Ft=SQ.FT, Occupancy=OCCUPANCY, CO_Code_Distr=CODE.DISTR)
+
 
 df = df %>% 
-    filter(!(Acct %in% duplicate_accounts$Acct)) %>%
-    left_join(CPAL_label_annotations, by = c("Acct" = "ACCOUNT_NUM")) 
+  filter(!(Acct %in% duplicate_accounts$Acct)) %>%
+  left_join(CPAL_label_annotations, by = c("Acct" = "ACCOUNT_NUM")) %>%
+  left_join(building_permit_features, by = "Acct") %>%
+  left_join(cert_occupancy_features, by = "Acct") 
 #    left_join(CO) %>%
 #    left_join(Building_permits) %>%
 #    left_join(DCAD) %>%
