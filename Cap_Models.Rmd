@@ -1,0 +1,263 @@
+---
+title: "CapStone"
+author: "Laura Lazarescou, Tina Pai, Andrew Mejia, Sabrina Purvis"
+date: "`r Sys.time()`"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    toc_depth: 6
+  github_document:
+    toc: yes
+    toc_depth: 6
+  word_document:
+    toc: yes
+    toc_depth: '6'
+always_allow_html: yes
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r library, include=FALSE, warning=FALSE, options("rgdal_show_exportToProj4_warnings"="none")}
+library(tidyverse)
+library(rpart)
+library(tm)
+library(tidyverse)
+library(randomForest)
+library(caret)
+library(knitr)
+library(XML)
+library(stringr)
+library(dplyr)
+library(corrplot)
+library(rpart)
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
+library(dplyr)
+library(ggraph)
+library(igraph)
+library(e1071)
+library(ROCR)
+library(DiagrammeR)
+library(doSNOW)
+library(parallel)
+library(ggplot2)
+library(xgboost)
+library(rgdal)
+library(rgeos)
+library(raster)
+library(sp)
+library(ggmap)
+library(ROCR)
+```
+
+```{r}
+setwd("/home/andrew/Desktop/Dallas Files/")
+file_direct = '/home/andrew/Desktop/Dallas Files/GIS_PACKAGE_FILES_TO_CSV/' 
+
+#Shape layer of all parcels in the City of Dallas
+clipped_parcels_by_dallas_geomtry = read.csv(file=paste0(file_direct,'Clipped_Parcels_by_Dallas_Simple.csv'))
+
+#All of Dallas County Parcels 
+DCAD_aprl_year = read.table(unz("DCAD2019_CURRENT.ZIP", "account_apprl_year.csv"), sep = ",", header = TRUE)
+
+#These are the only accounts in the Dallas city limits 
+DCAD_aprl_year_filtered_by_clipped_parcels = clipped_parcels_by_dallas_geomtry %>% inner_join(DCAD_aprl_year, by = c("Acct"="ACCOUNT_NUM"))
+
+dim(DCAD_aprl_year[duplicated(DCAD_aprl_year$ACCOUNT_NUM),])[1]
+#You would want to use caution eliminate the parcels since these are multi-use buildings 
+#00000300268000000 with account 0000030026800TE00	
+dim(DCAD_aprl_year[duplicated(DCAD_aprl_year$GIS_PARCEL_ID),])[1]
+head(DCAD_aprl_year[duplicated(DCAD_aprl_year$GIS_PARCEL_ID),], n = 20)
+
+###CPAL Annotations
+CPAL_Label_annotations = read.csv(file=paste0(file_direct,'Clipped_Parcels_by_Dallas_Simple_vac_pts_annotations.csv'))
+CPAL_Label_annotations["VAC_PAR"] = 1
+
+dim(CPAL_Label_annotations [duplicated(CPAL_Label_annotations $ACCOUNT_NUM),])[1]
+#You would want to use caution eliminate the parcels since these are multi-use buildings 
+#00000300268000000 with account 0000030026800TE00	
+dim(CPAL_Label_annotations [duplicated(CPAL_Label_annotations $GIS_PARCEL_ID),])[1]
+head(CPAL_Label_annotations [duplicated(CPAL_Label_annotations $GIS_PARCEL_ID),], n = 20)
+
+### Join to DCAD FILTERED BY PARCELS TO CPAL ANNOTATIONS
+DCAD_aprl_year_filtered_by_clipped_parcels_annotated = full_join(DCAD_aprl_year_filtered_by_clipped_parcels,CPAL_Label_annotations, by = c("Acct" = "Acct"), suffix = c(".x", ".y"), keep = TRUE)
+
+### Add remaing target labels
+DCAD_aprl_year_filtered_by_clipped_parcels_annotated['VAC_PAR'] = ifelse(is.na(DCAD_aprl_year_filtered_by_clipped_parcels_annotated$VAC_PAR),0, DCAD_aprl_year_filtered_by_clipped_parcels_annotated$VAC_PAR) 
+
+#Size of not vacant
+dim(DCAD_aprl_year_filtered_by_clipped_parcels_annotated %>% filter(VAC_PAR == 0))
+#Size of Vacant
+dim(DCAD_aprl_year_filtered_by_clipped_parcels_annotated %>% filter(VAC_PAR == 1))
+
+#size of CPAL annotations
+dim(CPAL_Label_annotations)
+
+### 311 
+Clipped_311_2019 = read.csv(file=paste0(file_direct,'Clipped_Parcels_by_Dallas_Simple_inner_join_to_Clipped_2019_311.csv'))
+
+DCAD_aprl_year_filtered_by_clipped_parcels_annotated_joined_to_311 = full_join(DCAD_aprl_year_filtered_by_clipped_parcels_annotated,Clipped_311_2019,by = c("Acct.x" = "Acct"), suffix = c(".x", ".y"), keep = TRUE )
+  
+#### Crime 
+Clipped_All_Crime_2019 = read.csv(file=paste0(file_direct,'Clipped_Parcels_by_Dallas_Simple_inner_join_to_Clipped_2019_Police_Incidents.csv'))
+
+### CO 
+Clipped_CO_2019 = read.csv(file=paste0(file_direct,'Clipped_Parcels_by_Dallas_Simple_inner_join_to_Clipped_2019_co.csv'))
+Clipped_CO_2019['CO_ON_ACCOUNT'] = 1
+
+DCAD_aprl_year_filtered_by_clipped_parcels_annotated_joined_to_co = full_join(DCAD_aprl_year_filtered_by_clipped_parcels_annotated,Clipped_CO_2019,by = c("Acct.x" = "Acct"), suffix = c(".x", ".y"), keep = TRUE )
+
+DCAD_aprl_year_filtered_by_clipped_parcels_annotated_joined_to_co['CO_ON_ACCOUNT'] = ifelse(is.na(DCAD_aprl_year_filtered_by_clipped_parcels_annotated_joined_to_co$CO_ON_ACCOUNT), 0, 1)
+
+#Get a count of accounts with a CO
+Account_counts = DCAD_aprl_year_filtered_by_clipped_parcels_annotated_joined_to_co %>% group_by(Acct.x) %>% tally(CO_ON_ACCOUNT)
+
+### Test data for models 
+
+DCAD_test_set = DCAD_aprl_year_filtered_by_clipped_parcels_annotated %>% left_join(Account_counts, by = c("Acct.x" = "Acct.x"), suffix = c(".u", ".z"), keep = TRUE  )
+
+#myvars <- c("LAND_VAL", "TOT_VAL", "VAC_PAR", "n", "Acct.x.u")
+
+myvars <- c("LAND_VAL", "TOT_VAL", "n", "VAC_PAR")
+
+data = DCAD_test_set[myvars]
+
+```
+
+#80/20 train test stratified split 
+#https://www.rdocumentation.org/packages/caret/versions/6.0-86/topics/createDataPartition
+```{r}
+rand_seed = 42
+set.seed(rand_seed)
+train_partition =  createDataPartition(
+  y= data$VAC_PAR,
+  p = .70,
+  list = FALSE
+)
+train = data[train_partition,]
+test =  data[-train_partition,]
+print("Number of records in Training data")
+nrow(train)
+print("Number of records in Testing data")
+nrow(test)
+```
+
+```{r}
+rand_seed = 42
+set.seed(rand_seed)
+# create baseline random forest model
+random_forest_1 <- randomForest(VAC_PAR ~., data = train, ntree = 50, importance=TRUE, na.action = na.roughfix, maxnodes = 10)
+preds_1 = predict(random_forest_1,test)
+preds_1_cut = ifelse(preds_1>.5,1,0)
+confusionMatrix(as.factor(preds_1_cut),as.factor(test$VAC_PAR), positive = "1")
+F_meas(as.factor(preds_1_cut),as.factor(test$VAC_PAR))
+```
+```{r}
+data["VAC_PAR_T"] = as.factor(data$VAC_PAR_T)
+rand_seed = 42
+set.seed(rand_seed)
+train_partition =  createDataPartition(
+  y= data$VAC_PAR_T,
+  p = .70,
+  list = FALSE
+)
+train = data[train_partition,]
+test =  data[-train_partition,]
+print("Number of records in Training data")
+nrow(train)
+print("Number of records in Testing data")
+nrow(test)
+
+```
+
+```{r}
+library(doSNOW)
+numberOfCores = detectCores()
+cl = makeCluster(numberOfCores, type = "SOCK")
+registerDoSNOW(cl)
+
+set.seed(1234)
+train.control = trainControl(
+  method = "repeatedcv",
+  number = 3, # 5-fold cross validation
+  repeats = 3, # repeated three times
+  summaryFunction = twoClassSummary,
+  classProbs = TRUE
+)
+
+tune.gridxgb <- expand.grid(eta = c(0.05,0.3, 0.075), # Shrinkage 
+                      nrounds = c(50, 75, 100),  # Boosting Iterations
+                      max_depth = 4:7,  # Max Tree Depth
+                      min_child_weight = c(2.0, 2.25), # Minimum Sum of Instance Weight 
+                      colsample_bytree = c(0.3, 0.4, 0.5), # Subsample Ratio of Columns
+                      gamma = 0, # Minimum Loss Reduction
+                      subsample = 1)  # Subsample Percentage
+
+xgBoostGrid = train(VAC_PAR ~.,
+                    data=train,
+                    method="xgbTree",
+                    tuneGrid = tune.gridxgb,
+                    trControl = train.control)
+
+
+stopCluster(cl)
+
+```
+
+Build final model using best parameters
+```{r}
+
+y = data.matrix(train[,4])
+x = data.matrix(train[,c(1:3)])
+
+xgbFinal = xgboost(data=x, label= y, nrounds = 100, max_depth = 7, eta = 0.3, gamma = 0, colsample_bytree = 0.5, min_child_weight = 2, subsample = 1, objective="binary:logistic")
+
+```
+
+Check results of final model
+```{r}
+
+#make the prediction
+pred = predict(xgbFinal, data.matrix(test[,c(1:3)]))
+
+preds_1_cut = ifelse(pred>.5,1,0)
+confusionMatrix(as.factor(preds_1_cut),as.factor(test$VAC_PAR), positive = "1")
+F_meas(as.factor(preds_1_cut),as.factor(test$VAC_PAR))
+
+```
+
+
+```{r}
+#generage ROC curve
+myPred = prediction(pred,test$VAC_PAR)
+perf <-performance(myPred,"tpr","fpr")
+#calculate AUC
+auc = performance(myPred, measure="auc")
+auc = auc@y.values[[1]]
+
+#plot the curve
+plot(perf,main=paste0("XGBoost ROC curve: AUC= ",auc), xlim=c(0,0.1), ylim=c(.8,1),colorize=TRUE)
+
+```
+
+We want to optimize for minimal false positives to ensure important messages get through without being blocked.  by using a threshold of .875, we minimize FPs
+```{r}
+#now let's try to use confusionMatrix from the caret package with threshold set to minimize falses based on ROC curve analysis
+pred_label = as.numeric(pred>.50)
+#create confusion matrix
+confusionMatrix(factor(pred_label), factor(test$VAC_PAR) , positive = "1")
+```
+
+Feature importance
+we can see with the table below perCaps is our most important feature followed by numLines
+```{r}
+xgb.importance(feature_names = colnames(train[,-1]), model = xgbFinal, data=train[,-1], label=train[,1])
+```
+
+```{r}
+xgb.plot.importance(xgb.importance(feature_names = colnames(train[,-1]), model = xgbFinal, data=train[,-1], label=train[,1]), top_n = 10)
+```
+
