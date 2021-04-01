@@ -73,11 +73,24 @@ DCAD_aprl_year = read.table(unz("DCAD2019_CURRENT.ZIP", "account_apprl_year.csv"
 #These are the only accounts in the Dallas city limits 
 DCAD_aprl_year_filtered_by_clipped_parcels = clipped_parcels_by_dallas_geomtry %>% inner_join(DCAD_aprl_year, by = c("Acct"="ACCOUNT_NUM"))
 
+###337 ambigous parcels observations, 34 total Parcels 
+ambigious_filtered_parcels = c(unique(DCAD_aprl_year_filtered_by_clipped_parcels[duplicated(DCAD_aprl_year_filtered_by_clipped_parcels$GIS_PARCEL_ID),43]))
+
+### 336 ambigous accts observations, 33 total Parcels 
+ambigious_filtered_accts = c(unique(DCAD_aprl_year_filtered_by_clipped_parcels[duplicated(DCAD_aprl_year_filtered_by_clipped_parcels$Acct),2]))
+
+
 dim(DCAD_aprl_year[duplicated(DCAD_aprl_year$ACCOUNT_NUM),])[1]
 #You would want to use caution eliminate the parcels since these are multi-use buildings 
 #00000300268000000 with account 0000030026800TE00	
 dim(DCAD_aprl_year[duplicated(DCAD_aprl_year$GIS_PARCEL_ID),])[1]
 head(DCAD_aprl_year[duplicated(DCAD_aprl_year$GIS_PARCEL_ID),], n = 20)
+
+##There are about 30K ambigious parcels 
+ambigious_parcels = c(unique(DCAD_aprl_year[duplicated(DCAD_aprl_year$GIS_PARCEL_ID),39]))
+
+### We see in DCAD_Apprl year there are unique ACCT numbers 
+ambigious_accts_dcad = c(unique(DCAD_aprl_year[duplicated(DCAD_aprl_year$ACCOUNT_NUM),1]))
 
 ###CPAL Annotations
 CPAL_Label_annotations = read.csv(file=paste0(file_direct,'Clipped_Parcels_by_Dallas_Simple_vac_pts_annotations.csv'))
@@ -223,9 +236,9 @@ testtask <- makeClassifTask (data = test,target = "VAC_PAR")
 # lrn_tune <- setHyperPars(lrn,par.vals = mytune$x)
 # ```
 
-```{r}
-xgmodel <- train(learner = lrn_tune,task = traintask)
-```
+# ```{r}
+# xgmodel <- train(learner = lrn_tune,task = traintask)
+# ```
 
 # ```{r}
 # xgpred = predict(xgmodel, testtask)
@@ -240,7 +253,7 @@ xgmodel <- train(learner = lrn_tune,task = traintask)
 
 
 ```{r}
-rand_seed = 42
+rand_seed = 959
 set.seed(rand_seed)
 train_partition =  createDataPartition(
   y= data$VAC_PAR,
@@ -267,7 +280,7 @@ dtest = xgb.DMatrix(data = data_test, label = data_test_l  )
 ```
 
 ```{r}
-rand_seed = 42
+rand_seed = 959
 params = list(booster = "gbtree", objective = "binary:logistic", eta = 0.1, max_depth = 5, min_child_weight=8.34, subsample=0.963, colsample_bytree=0.787)
 xgboost_best = xgb.train(params = params, data = dtrain, nrounds = 79, watchlist = list(val = dtest, train = dtrain), print_every_n = 10, early_stopping_rounds = 10, maximize = F, eval_metric = "error")
 ```
