@@ -9,9 +9,9 @@ library(superml)
 df <- read.csv('Clipped_Parcels_by_Dallas_Simple_inner_join_to_Clipped_2019_Group_A_Crime.csv', header=TRUE)
 glimpse(df)
 dim(df)
+head(df)
 
-
-new_df <- df %>% count(Shape_STAr, Shape_STLe, Acct, RecAcs, 
+new_df <- df %>% filter(year_of_incident==2019) %>% count(Shape_STAr, Shape_STLe, Acct, RecAcs, 
              nibrs_crime_category,	nibrs_crime_against, sort = TRUE)
 
 
