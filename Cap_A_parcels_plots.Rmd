@@ -1,0 +1,164 @@
+---
+title: "CapStone"
+author: "Laura Lazarescou, Tina Pai, Andrew Mejia, Sabrina Purvis"
+date: "`r Sys.time()`"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    toc_depth: 6
+  github_document:
+    toc: yes
+    toc_depth: 6
+  word_document:
+    toc: yes
+    toc_depth: '6'
+always_allow_html: yes
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r library, include=FALSE, warning=FALSE, options("rgdal_show_exportToProj4_warnings"="none")}
+library(tidyverse)
+library(rpart)
+library(tm)
+library(tidyverse)
+library(randomForest)
+library(caret)
+library(knitr)
+library(kableExtra)
+library(XML)
+library(stringr)
+library(dplyr)
+library(corrplot)
+library(rpart)
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
+library(dplyr)
+library(ggraph)
+library(igraph)
+library(e1071)
+library(ROCR)
+library(DiagrammeR)
+library(doSNOW)
+library(parallel)
+library(ggplot2)
+library(xgboost)
+library(rgdal)
+library(rgeos)
+library(raster)
+library(sp)
+library(ggmap)
+```
+
+```{r}
+
+
+# The input file geodatabase
+fgdb = "/media/andrew/Seagate Backup Plus Drive/Documents/School/HomeWork/Capstone/Vacant Lot Analysis.gdb"
+
+# List all feature classes in a file geodatabase
+subset(ogrDrivers(), grepl("GDB", name))
+fc_list = ogrListLayers(fgdb)
+print(fc_list)
+
+ogrListLayers(fgdb)
+
+# Read the feature class
+fc = readOGR(dsn=fgdb,layer=ogrListLayers(fgdb)[7])
+
+# Determine the FC extent, projection, and attribute information
+summary(fc)
+
+# View the feature class
+plot(fc)
+
+```
+##### All Geopackages from clipped parcels can be read and ploted in this fashion. 
+```{r}
+#parcel_dsn = '/media/andrew/Seagate Backup Plus Drive/Documents/School/HomeWork/Capstone/PARCEL2020/PARCEL2020/'
+parcel_dsn = '/home/andrew/Desktop/Dallas Files/GIS_PACKAGE_FILES/Clipped_2019_311_by_Dallas_Simple_buffer.gpkg'
+parcel_fc_list = ogrListLayers(parcel_dsn)
+print(parcel_fc_list)
+parcel_fc = readOGR(dsn=parcel_dsn,layer=parcel_fc_list[1])
+plot(parcel_fc)
+```
+# Reproject a coordinate space. 
+```{r}
+parcel_trans = spTransform(parcel_fc, CRS(proj4string(fc)))
+```
+#How to subset a parcel space
+```{r}
+parcel_subset = parcel_trans[fc, ]
+```
+#How to generate buffers
+```{r}
+pace_subset_buffer = gBuffer(parcel_subset, width = 30)
+
+```
+
+```{r}
+census_dsn = '/media/andrew/Seagate Backup Plus Drive/Documents/School/HomeWork/Capstone/tl_2010_48113_tract10/'
+census_fc_list = ogrListLayers(census_dsn)
+print(census_fc_list)
+census_fc = readOGR(dsn=census_dsn ,layer="tl_2010_48113_tract10")
+```
+
+```{r}
+census_trans = spTransform(census_fc, CRS(proj4string(fc)))
+```
+
+```{r}
+census_subset = census_trans[fc, ]
+```
+```{r}
+# Read the feature class
+fc_311 = readOGR(dsn=fgdb,layer=ogrListLayers(fgdb)[18])
+# Determine the FC extent, projection, and attribute information
+summary(fc_311)
+fc_311_buffer = gBuffer(fc_311, byid = TRUE, width = 30)
+```
+#Tidying up raw downloaded files from City sources below
+```{r}
+police_data = read.csv("/home/andrew/Downloads/Police_Incidents.csv")
+police_data = police_data %>% dplyr::filter(Year.of.Incident == 2019) 
+lat_pat =  "([0-9]+[.][0-9]+)"
+long_pat = "(\\s[-][0-9]+[.][0-9]+)"
+police_data["Lat"] = police_data$Location1 %>% stringr::str_extract(pattern =lat_pat)
+police_data["Long"] = police_data$Location1 %>% stringr::str_extract(pattern =long_pat)
+write.csv(police_data, "/home/andrew/Downloads/2019_Police_Incidents.csv")
+```
+
+```{r}
+co_list = readxl::read_excel("/home/andrew/Downloads/COs_2019.xlsx")
+co_list["Address_Num"] = co_list$ADDRESS %>% stringr::str_extract("[:digit:]]+")
+co_list["Street"] = co_list$ADDRESS %>% stringr::str_extract("[^[:digit:]]+")
+co_list["Street"] = co_list$Street %>% stringr::str_extract("^\\sSte:")
+co_list['City'] = "Dallas"
+co_list['State'] = "Texas"
+
+for(i in 1:nrow(co_list))
+{
+  result = geocode(co_list$ADDRESS[i], output = "latlona", source = "google")
+  co_list$lon[i] = as.numeric(result[1])
+  co_list$lat[i] = as.numeric(result[2])
+  co_list$geoAddress[i] <- as.character(result[3])
+}
+
+#write.csv(co_list, "/home/andrew/Downloads/co_list.csv")
+```
+
+```{r}
+service_311_data = read.csv("/home/andrew/Downloads/311_Service_Requests_for_Fiscal_Year__FY__2019_-_Bulk.csv")
+service_311_data = service_311_data %>% dplyr::filter(as.Date(CREATED_DATE) >= "1/1/2019") 
+lat_pat =  "([0-9]+[.][0-9]+)"
+long_pat = "([-][0-9]+[.][0-9]+)"
+service_311_data["Lat"] = service_311_data$LAT_LONG_VALUE %>% stringr::str_extract(pattern =lat_pat)
+service_311_data["Long"] = service_311_data$LAT_LONG_VALUE %>% stringr::str_extract(pattern =long_pat)
+write.csv(service_311_data, "/home/andrew/Downloads/2019_311_Service_Requests.csv")
+ 
+
+```
+
