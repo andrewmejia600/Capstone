@@ -9,7 +9,10 @@ cert_occupancy_features = cert_occupancy %>%
   add_tally(name="Count_COs") %>%
   filter(CO_Issue_Date == max(CO_Issue_Date)) %>%
   mutate(Days_Since_Issue =  Sys.Date() - CO_Issue_Date) %>%
-  select(Acct, Days_From_CO_Appro_To_Issue, Count_COs, Days_Since_Issue, CO_Type=TYPE.OF.CO, Sq_Ft=SQ.FT, Occupancy=OCCUPANCY, CO_Code_Distr=CODE.DISTR)
+  mutate(Occupancy = as.numeric(factor(OCCUPANCY))) %>%
+  mutate(CO_Code_Distr = as.numeric(factor(CODE.DISTR))) %>%
+  mutate(CO_Type = as.numeric(factor(TYPE.OF.CO))) %>%
+  select(Acct, Days_From_CO_Appro_To_Issue, Count_COs, Days_Since_Issue, CO_Type, Sq_Ft=SQ.FT, Occupancy, CO_Code_Distr)
 
 # Write the data set to a file
 write.csv(cert_occupancy_features, "Data/Derived/df_cert_occupancy.csv")

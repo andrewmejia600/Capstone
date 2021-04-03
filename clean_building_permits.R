@@ -14,7 +14,8 @@ building_permit_features = building_permits %>%
   add_tally(name="Count_Permits") %>%
   filter(PermitDate == max(PermitDate)) %>%
   mutate(Days_Since_Permit =  Sys.Date() - Permit_Date) %>%
-  select(Acct, Permit_Type, Mapsco, Count_Permits, Days_Since_Permit)
+  mutate(Permit_Type = as.numeric(factor(Permit_Type))) %>%
+  select(Acct, Permit_Type, Count_Permits, Days_Since_Permit)
 
 
 # Write the data set to a file
