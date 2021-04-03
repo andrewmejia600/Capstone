@@ -5,7 +5,7 @@ library(dplyr)
 file_direct = "/Users/tina/Documents/School/Capstone/Dallas Files/GIS_PACKAGE_FILES_TO_CSV/"
 
 # add building permit features
-building_permits = read.csv(file=paste0(file_direct, 'Clipped_Parcels_by_Dallas_Simple_inner_join_to_Clipped_2019_Build_Perm.csv'), stringsAsFactors = FALSE, nrows=10000)
+building_permits = read.csv(file=paste0(file_direct, 'Clipped_Parcels_by_Dallas_Simple_inner_join_to_Clipped_2019_Build_Perm.csv'), stringsAsFactors = FALSE)
 
 building_permit_features = building_permits %>%
   select(Acct, Permit_Type, PermitDate, Mapsco) %>%
