@@ -1,6 +1,7 @@
 # Create a csv of the desired features from building permits
 
 library(dplyr)
+library(BBmisc)
 
 file_direct = "/Users/tina/Documents/School/Capstone/Dallas Files/GIS_PACKAGE_FILES_TO_CSV/"
 
@@ -13,7 +14,9 @@ building_permit_features = building_permits %>%
   group_by(Acct) %>%
   add_tally(name="Count_Permits") %>%
   filter(PermitDate == max(PermitDate)) %>%
-  mutate(Days_Since_Permit =  Sys.Date() - Permit_Date) %>%
+  ungroup() %>%
+  mutate(Count_Permits = normalize(Count_Permits, method="scale")) %>%
+  mutate(Days_Since_Permit =  normalize(as.numeric(Sys.Date() - Permit_Date, units="days"), method="scale")) %>%
   mutate(Permit_Type = as.numeric(factor(Permit_Type))) %>%
   select(Acct, Permit_Type, Count_Permits, Days_Since_Permit)
 
