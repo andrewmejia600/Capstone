@@ -24,4 +24,4 @@ building_permit_features = building_permits %>%
 
 
 # Write the data set to a file
-write.csv(building_permit_features, "../Data/clean_building_permits.csv")
+write.csv(building_permit_features, "../../Data/clean_building_permits.csv")
