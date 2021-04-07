@@ -1,63 +1,127 @@
-# Create a data set for machine learning with all the desired features
+#
+# Create a master dataset for classifying parcels in the City of Dallas
 
 library(dplyr)
+library(BBmisc)
 
-# file_direct = '/home/andrew/Desktop/Dallas Files/GIS_PACKAGE_FILES_TO_CSV/'
-file_direct = "/Users/tina/Documents/School/Capstone/Dallas Files/GIS_PACKAGE_FILES_TO_CSV/"
+# gis_file_direct = '/home/andrew/Desktop/Dallas Files/GIS_PACKAGE_FILES_TO_CSV/'
+# gis_file_direct = "/Users/tina/Documents/School/Capstone/Dallas Files/GIS_PACKAGE_FILES_TO_CSV/"
+file_direct = "C:/SMU_Local/data/capstone/Data/GIS_PACKAGE_FILES_TO_CSV/"
 
-# Start the data set with simple Dallas parcels
-df = read.csv(file=paste0(file_direct,'Clipped_Parcels_by_Dallas_Simple.csv'), stringsAsFactors = FALSE)
+#Begin with shape layer of all parcels in Dallas County, limited to the City of Dallas
+dallas_simple = read.csv(file=paste0(file_direct,'Clipped_Parcels_by_Dallas_Simple.csv'), stringsAsFactors = FALSE)
 
-# CPAL Annotations
-CPAL_label_annotations = read.csv(file=paste0(file_direct,'Clipped_Parcels_by_Dallas_Simple_vac_pts_annotations.csv'), stringsAsFactors = FALSE)
-CPAL_label_annotations["VAC_PAR"] = 1
+summary(dallas_simple)
 
-# all the dcad data from which to obtain a list of duplicate accounts
-DCAD_all = read.csv("my_dcad_file.csv")
-DCAD_all = DCAD_all %>%
-  select("Acct") %>%
-  rbind("other_dcad_data")
+# Build an array of Accts that are associated with more than one parcel
 
-# Make list of accounts that have no 
-duplicate_accounts = CPAL_label_annotations %>%
-  group_by(ACCOUNT_NUM) %>%
+dallas_multiple_accounts = dallas_simple %>%
+  group_by(Acct) %>%
   count() %>%
   filter(n>1) 
 
-# add building permit features
-building_permits = read.csv(file=paste0(file_direct, 'Clipped_Parcels_by_Dallas_Simple_inner_join_to_Clipped_2019_Build_Perm.csv'), stringsAsFactors = FALSE, nrows=10000)
-building_permit_features = building_permits %>%
-  select(Acct, Permit_Type, PermitDate, Mapsco) %>%
-  mutate(Permit_Date = as.Date(substr(PermitDate, 1, 10))) %>%
+summary(dallas_multiple_accounts)  # Answer - yes:  35 rows, 2 columns "Acct" and "n"
+
+# Print out all 35 Acct values to see any trend or pattern in ownership
+
+dallas_multiple_accounts %>% print(n = Inf)
+
+# Assess total parcels owned by 35 Acct owners
+
+mult_Acct = sum(dallas_multiple_accounts$n)  # 35 Accounts are associated with 373 parcels
+
+
+# Remove ambiguous Acct values from dallas_simple
+
+dallas_simple_unique = dallas_simple %>% filter(!(dallas_simple$Acct %in% dallas_multiple_accounts$Acct))
+
+# df is based on dallas_simple_unique
+
+df = dallas_simple_unique
+summary(df)  # 293020 Unique Acct Values in City of Dallas shape file
+
+#######################  End df Create - no Annotations
+
+###################### Add Annotations from DCAD_vac_pts.csv which was provided by CPAL
+
+CPAL_labels = read.csv('../../Data/CPAL/DCAD_vac_pts.csv', stringsAsFactors = FALSE)
+# Create Annotation factor based on the Acct being a member of the list of Accounts in DCAD_vac_pts.csv
+CPAL_labels["vac_par"] = 1
+
+# Remove attributes from DCAD_vac_pts.csv except Acct and vac_par
+CPAL_labels = data.frame("Acct"=CPAL_labels$ACCOUNT_NUM, "vac_par" = CPAL_labels$vac_par)
+
+# For future reference:  Detect ambiguous Acct values in DCAD_vac_pts.csv
+# Note, this is not used at this time, since these accounts are not in df and left join should filter them
+CPAL_multiple_accounts = CPAL_labels %>%
   group_by(Acct) %>%
-  add_tally(name="Count_Permits") %>%
-  filter(PermitDate == max(PermitDate)) %>%
-  mutate(Days_Since_Permit =  Sys.Date() - Permit_Date)
+  count() %>%
+  filter(n>1)
 
-# add co features
-cert_occupancy = read.csv(file=paste0(file_direct, 'Clipped_Parcels_by_Dallas_Simple_inner_join_to_Clipped_2019_co.csv'), stringsAsFactors = FALSE, nrows=1000)
-cert_occupancy_features = cert_occupancy %>%
-  mutate(CO_Issue_Date = as.Date(ISSUE.DATE, "%m/%d/%Y")) %>%
-  mutate(Days_From_CO_Appro_To_Issue = CO_Issue_Date - as.Date(DATE.APPRO, "%m/%d/%Y")) %>%
-  group_by(Acct) %>%
-  add_tally(name="Count_COs") %>%
-  filter(CO_Issue_Date == max(CO_Issue_Date)) %>%
-  mutate(Days_Since_Issue =  Sys.Date() - CO_Issue_Date) %>%
-  select(Acct, CO_Issue_Date, Days_From_CO_Appro_To_Issue, Count_COs, Days_Since_Issue, CO_Type=TYPE.OF.CO, Sq_Ft=SQ.FT, Occupancy=OCCUPANCY, CO_Code_Distr=CODE.DISTR)
+# Join labels, vac_par=1 to df
+df_with_labels = left_join(df,CPAL_labels, by = c("Acct" = "Acct"), keep = FALSE)
 
+### Add remaining target labels, vac_par=0
+df_with_labels['vac_par'] = ifelse(is.na(df_with_labels$vac_par),0,1)
 
-df = df %>% 
-  filter(!(Acct %in% duplicate_accounts$Acct)) %>%
-  left_join(CPAL_label_annotations, by = c("Acct" = "ACCOUNT_NUM")) %>%
-  left_join(building_permit_features, by = "Acct") %>%
-  left_join(cert_occupancy_features, by = "Acct") 
-#    left_join(CO) %>%
-#    left_join(Building_permits) %>%
-#    left_join(DCAD) %>%
-#    left_join(data311) 
+summary(df_with_labels)  #No NAs in vac_par
 
+table(df_with_labels$vac_par)  #264459 = 0 28562 =1
+
+df = df_with_labels
+
+###############  Join All prepared dataframes to reference df
+
+# Read dataframes that were provided by different sources and pre-processed
+
+df_DCAD = read.csv('../../Data/clean_DCAD.csv', stringsAsFactors = FALSE)
+df_311 = read.csv('../../Data/clean_311.csv', stringsAsFactors = FALSE)
+df_bp = read.csv('../../Data/clean_building_permits.csv', stringsAsFactors = FALSE)
+df_CO = read.csv('../../Data/clean_cert_occupancy.csv', stringsAsFactors = FALSE)
+df_crime = read.csv('../../Data/clean_crime.csv', stringsAsFactors = FALSE)
+
+df_complete = df %>% 
+    left_join(df_DCAD, by = c("Acct" = "Acct"), keep = FALSE) %>%
+    left_join(df_311, by = c("Acct" = "Acct"), keep = FALSE) %>%
+    left_join(df_bp, by = c("Acct" = "Acct"), keep = FALSE) %>%
+    left_join(df_CO, by = c("Acct" = "Acct"), keep = FALSE) %>%
+    left_join(df_crime, by = c("Acct" = "Acct"), keep = FALSE)
   
-  
+summary(df_complete)
+
+# NO NA values in target vac_par
+# Replace all NA values with 0
+df_complete[is.na(df_complete)] <- 0
+
+summary(df_complete)
+
+# Normalize DCAD numeric factors.
+
+df_complete$impr_val_scaled = normalize(df_complete$impr_val, method="scale")
+df_complete$land_val_scaled = normalize(df_complete$land_val, method="scale")
+df_complete$tot_val_scaled = normalize(df_complete$tot_val, method="scale")
+df_complete$area_sqft_scaled = normalize(df_complete$area_sqft, method="scale")
+
+
+# Remove unnecessary columns for modeling
+# Acct, GIS_parcel_ID, Shape*, X vals
+
+df_all <- select(df_complete,-c(1:8,12,13,21:23,26,32,44:47)) 
+df_all$vac_par = df_complete$vac_par  # Append vac_par annotations to end of dataframe
+
+summary(df_all)
+
+
+df_log_and_scaled <- select(df_all, c(7:10,12,13,15,17,19,21,23,24,26:30,32:37))
+df_not_scaled <- select(df_all, c(1:6,11,13,14,16,18,20,22,24,25,27:31,37))
+df_all_with_Acct_GIS <- cbind("Acct"=df_complete$Acct,"GIS_parcel_ID"=df_complete$gis_parcel_id,df_all)
 
 # Write the data set to a file
-write.csv(df, "dataset.csv")
+write.csv(df_all, "../../Data/df_all.csv")
+write.csv(df_log_and_scaled,"../../Data/df_log_and_scaled.csv")
+write.csv(df_not_scaled,"../../Data/df_not_scaled.csv")
+write.csv(df_all_with_Acct_GIS,"../../Data/df_all_with_Acct_GIS.csv")
+
+######################  End create dataset
+
+ 
