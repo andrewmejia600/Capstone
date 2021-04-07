@@ -44,7 +44,7 @@ summary(df)  # 293020 Unique Acct Values in City of Dallas shape file
 
 ###################### Add Annotations from DCAD_vac_pts.csv which was provided by CPAL
 
-CPAL_labels = read.csv('../../Data/CPAL/DCAD_vac_pts.csv', stringsAsFactors = FALSE)
+CPAL_labels = read.csv('../../Data/DCAD_vac_pts.csv', stringsAsFactors = FALSE)
 # Create Annotation factor based on the Acct being a member of the list of Accounts in DCAD_vac_pts.csv
 CPAL_labels["vac_par"] = 1
 
