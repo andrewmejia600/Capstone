@@ -140,10 +140,10 @@ df_DCAD = left_join(df_apprl,df_land, by = c("Acct" = "Acct"), keep = FALSE)
 
 # Log (base e) Normalize value factors and area_sqft - range of values is extreme.
 
-df_DCAD$log_impr_val = log(df_DCAD$impr_val)
-df_DCAD$log_land_val = log(df_DCAD$land_val)
-df_DCAD$log_tot_val = log(df_DCAD$tot_val)
-df_DCAD$log_area_sqft = log(df_DCAD$area_sqft)
+df_DCAD$log_impr_val = log(df_DCAD$impr_val + 1)
+df_DCAD$log_land_val = log(df_DCAD$land_val + 1)
+df_DCAD$log_tot_val = log(df_DCAD$tot_val + 1)
+df_DCAD$log_area_sqft = log(df_DCAD$area_sqft + 1)
 
 # Note:  Values include parcels outside of City of Dallas.
 # DCAD continuous factors will be scaled after left join with df in create_dataset.r
