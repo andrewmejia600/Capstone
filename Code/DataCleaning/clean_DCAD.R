@@ -10,11 +10,23 @@
 
 library(dplyr)
 library(tidyverse)
-file_direct = "C:/SMU_Local/data/capstone/Data/DCAD2019_CURRENT/"
-
+#file_direct = "C:/SMU_Local/data/capstone/Data/DCAD2019_CURRENT/"
+file_direct = "/Users/tina/Documents/School/Capstone/Dallas Files/DCAD2019_CERTIFIED_07252019/"
 #####################  Prepare land.csv 
 
 land = read.csv(file=paste0(file_direct,'land.csv'), stringsAsFactors = FALSE)
+
+
+
+#Rebucket land zoning
+land = land %>%
+  mutate(zoning_buckets = ifelse(str_detect(ZONING, "FAMILY"), "family",
+                                 ifelse(str_detect(ZONING, "PLANNED DEVELOPMENT"), "development",
+                                        ifelse(str_detect(ZONING, "INDUSTRIAL"), "industrial",
+                                               ifelse(str_detect(ZONING, "OFFICE"), "office",
+                                                      ifelse(str_detect(ZONING, "AGRICULTURAL"), "agricultural",
+                                                             ifelse(str_detect(ZONING, "RETAIL"), "retail",
+                                                                    ifelse(str_detect(ZONING, "LIQUOR"), "liquor","other"))))))))
 
 summary(land)
 
@@ -39,8 +51,8 @@ for(i in 1:l){
 
 ## Reduce land dataset to factors we will analyze
 
-df_land = data.frame(land$ACCOUNT_NUM, land$AREA_SQFT)
-names(df_land) <- c('Acct','area_sqft')
+df_land = data.frame(land$ACCOUNT_NUM, land$AREA_SQFT, land$zoning_buckets)
+names(df_land) <- c('Acct','area_sqft', 'zoning_buckets')
 
 ## Eliminate multiple Acct values before joining with other DCAD files
 
