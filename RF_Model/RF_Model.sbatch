@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --mail-user mejiaa@smu.edu
+#SBATCH --mail-user mejiaa@smu.edu          #Edit Email Address
 #SBATCH --mail-type=all
 #SBATCH -J RF_Model                         # Job name
 #SBATCH -o RF_Model_%A-%a.out               # Output file name

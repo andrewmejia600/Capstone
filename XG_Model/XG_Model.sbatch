@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --mail-user mejiaa@smu.edu
 #SBATCH --mail-type=all
-#SBATCH -J RF_Model                         # Job name
-#SBATCH -o RF_Model_%A-%a.out               # Output file name
+#SBATCH -J XG_Model                         # Job name
+#SBATCH -o XG_Model_%A-%a.out               # Output file name
 #SBATCH -p standard-mem-s                   # Partition (queue)
 #SBATCH --exclusive                         # Exclusivity 
 #SBATCH --mem=250G                          # Total memory required per node
