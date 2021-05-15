@@ -74,7 +74,7 @@ df = df_with_labels
 
 # Read dataframes that were provided by different sources and pre-processed
 
-df_DCAD = read.csv('../../Data/clean_DCAD.csv', stringsAsFactors = FALSE)
+df_DCAD = read.csv(paste0(gis_file_direct, '/Data/clean_DCAD.csv'), stringsAsFactors = FALSE)
 df_311 = read.csv('../../Data/clean_311.csv', stringsAsFactors = FALSE)
 df_bp = read.csv('../../Data/clean_building_permits.csv', stringsAsFactors = FALSE)
 df_CO = read.csv('../../Data/clean_cert_occupancy.csv', stringsAsFactors = FALSE)
@@ -117,10 +117,10 @@ df_not_scaled <- select(df_all, c(1:6,11,13,14,16,18,20,22,24,25,27:31,37))
 df_all_with_Acct_GIS <- cbind("Acct"=df_complete$Acct,"GIS_parcel_ID"=df_complete$gis_parcel_id,df_all)
 
 # Write the data set to a file
-write.csv(df_all, "../../Data/df_all.csv")
-write.csv(df_log_and_scaled,"../../Data/df_log_and_scaled.csv")
-write.csv(df_not_scaled,"../../Data/df_not_scaled.csv")
-write.csv(df_all_with_Acct_GIS,"../../Data/df_all_with_Acct_GIS.csv")
+write.csv(df_all, "../../Data/df_all.csv", row.names = FALSE)
+write.csv(df_log_and_scaled,"../../Data/df_log_and_scaled.csv", row.names = FALSE)
+write.csv(df_not_scaled,"../../Data/df_not_scaled.csv", row.names = FALSE)
+write.csv(df_all_with_Acct_GIS,"../../Data/df_all_with_Acct_GIS.csv", row.names = FALSE)
 
 ######################  End create dataset
 
