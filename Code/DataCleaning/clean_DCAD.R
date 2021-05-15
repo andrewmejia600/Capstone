@@ -148,4 +148,4 @@ df_DCAD$log_area_sqft = log(df_DCAD$area_sqft + 1)
 # Note:  Values include parcels outside of City of Dallas.
 # DCAD continuous factors will be scaled after left join with df in create_dataset.r
 
-write.csv(df_DCAD, '../../Data/clean_DCAD.csv',quote = TRUE)
+write.csv(df_DCAD, '../../Data/clean_DCAD.csv',quote = TRUE,  row.names=FALSE)
