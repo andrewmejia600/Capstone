@@ -74,7 +74,7 @@ df = df_with_labels
 
 # Read dataframes that were provided by different sources and pre-processed
 
-df_DCAD = read.csv(paste0(gis_file_direct, '/Data/clean_DCAD.csv'), stringsAsFactors = FALSE)
+df_DCAD = read.csv(paste0(gis_file_direct, 'clean_DCAD.csv'), stringsAsFactors = FALSE)
 df_311 = read.csv('../../Data/clean_311.csv', stringsAsFactors = FALSE)
 df_bp = read.csv('../../Data/clean_building_permits.csv', stringsAsFactors = FALSE)
 df_CO = read.csv('../../Data/clean_cert_occupancy.csv', stringsAsFactors = FALSE)
@@ -106,14 +106,22 @@ df_complete$area_sqft_scaled = normalize(df_complete$area_sqft, method="scale")
 # Remove unnecessary columns for modeling
 # Acct, GIS_parcel_ID, Shape*, X vals
 
-df_all <- select(df_complete,-c(1:8,12,13,21:23,26,32,44:47)) 
+df_all <- select(df_complete,-c(1:5,7, 20:22, 25, 31, 43:46)) 
 df_all$vac_par = df_complete$vac_par  # Append vac_par annotations to end of dataframe
 
 summary(df_all)
 
 
-df_log_and_scaled <- select(df_all, c(7:10,12,13,15,17,19,21,23,24,26:30,32:37))
-df_not_scaled <- select(df_all, c(1:6,11,13,14,16,18,20,22,24,25,27:31,37))
+df_log_and_scaled <- df_all %>%
+  select(vac_par, division_cd, sptd_code, num_div_code, zoning_buckets, log_impr_val, log_land_val, log_tot_val,
+         log_area_sqft, count_of_311_scaled, permit_type, count_permits_scaled, days_since_permit_scaled,
+         days_from_CO_appro_to_issue_scaled, count_COs_scaled, days_since_issue_scaled, CO_type, sq_ft_scaled,
+         occupancy, CO_code_distr, nibrs_crime_against, nibrs_crime_against, count_of_crime_scaled)
+df_not_scaled <- df_all %>%
+  select(vac_par, division_cd, sptd_code, num_div_code, zoning_buckets, impr_val, land_val, tot_val,
+         area_sqft, count_of_311, permit_type, count_permits, days_since_permit,
+         days_from_CO_appro_to_issue, count_COs, days_since_issue, CO_type, sq_ft,
+         occupancy, CO_code_distr, nibrs_crime_against, nibrs_crime_against, count_of_crime)
 df_all_with_Acct_GIS <- cbind("Acct"=df_complete$Acct,"GIS_parcel_ID"=df_complete$gis_parcel_id,df_all)
 
 # Write the data set to a file
