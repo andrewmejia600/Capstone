@@ -29,7 +29,7 @@ read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/
 data = do.call(data.frame,lapply(read_data, function(x) replace(x, is.infinite(x),0)))
 
 data = data[,c(2:24)]
-colnames(data)[23] <- "VAC_PAR"
+colnames(data)[24] <- "VAC_PAR"
 
 
 rand_seed = 42
@@ -91,12 +91,12 @@ nrow(train)
 print("Number of records in Testing data")
 nrow(test)
 
-data_train = as.matrix(train[,c(1:22)])
-data_train_l = as.matrix(train[,c(23)])
+data_train = as.matrix(train[,c(1:23)])
+data_train_l = as.matrix(train[,c(24)])
 dtrain = xgb.DMatrix(data = data_train, label = data_train_l)
 
-data_test = as.matrix(test[,c(1:22)])
-data_test_l = as.matrix(test[,c(23)])
+data_test = as.matrix(test[,c(1:23)])
+data_test_l = as.matrix(test[,c(24)])
 dtest = xgb.DMatrix(data = data_test, label = data_test_l  )
 
 rand_seed = 959
@@ -109,12 +109,12 @@ xgbpred_best_cut =  ifelse(xgbpred_best > 0.50,1,0)
 confusionMatrix(as.factor(xgbpred_best_cut), as.factor(data_test_l), positive = "1")
 F_meas(as.factor(xgbpred_best_cut),as.factor(data_test_l))
 
-xgb.importance(feature_names = colnames(test[,c(1:22)]), model = xgboost_best, data=test[,c(1:22)], label=test[,23])
+xgb.importance(feature_names = colnames(test[,c(1:23)]), model = xgboost_best, data=test[,c(1:23)], label=test[,24])
 
-xgb.plot.importance(xgb.importance(feature_names = colnames(test[,c(1:22)]), model = xgboost_best, data=test[,c(1:22)], label=test[,23]), top_n = 12)
+xgb.plot.importance(xgb.importance(feature_names = colnames(test[,c(1:23)]), model = xgboost_best, data=test[,c(1:23)], label=test[,24]), top_n = 12)
 
 #generage ROC curve
-myPred = prediction(xgbpred_best,test[,23])
+myPred = prediction(xgbpred_best,test[,24])
 perf = ROCR::performance(myPred,"tpr","fpr")
 #calculate AUC
 auc = ROCR::performance(myPred, measure="auc")

@@ -21,7 +21,7 @@ read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/
 data = do.call(data.frame,lapply(read_data, function(x) replace(x, is.infinite(x),0)))
 
 data = data[,c(2:24)]
-colnames(data)[23] <- "VAC_PAR"
+colnames(data)[24] <- "VAC_PAR"
 
 
 rand_seed = 959
@@ -43,7 +43,7 @@ set.seed(rand_seed)
 # create baseline random forest model
 parallelStartSocket(cpus=detectCores())
 random_forest_1 <- randomForest(VAC_PAR ~., data = train, ntree = 50, importance=TRUE, na.action = na.roughfix, maxnodes = 10)
-preds_1 = predict(random_forest_1,test[,-23])
+preds_1 = predict(random_forest_1,test[,-24])
 parallelStop()
 
 
@@ -60,7 +60,7 @@ set.seed(rand_seed)
 # create baseline random forest model
 parallelStartSocket(cpus=detectCores())
 random_forest_1_best <- randomForest(VAC_PAR ~., data = train, ntree = 51, importance=TRUE, na.action = na.roughfix, maxnodes = 10, mtry = 5)
-preds_1 = predict(random_forest_1_best,test[,-23])
+preds_1 = predict(random_forest_1_best,test[,-24])
 parallelStop()
 
 preds_1_cut_best = ifelse(preds_1>.5,1,0)
