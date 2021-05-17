@@ -20,9 +20,7 @@ library(e1071)
 
 
 
-#read_data = read.csv('/users/mejiaa/CAPSTONE/Data/df_log_and_scaled.csv')
-read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/main/Data/df_log_and_scaled.csv')
-
+read_data = read.csv('/users/mejiaa/CAPSTONE/Data/df_log_and_scaled.csv')
 data = do.call(data.frame,lapply(read_data, function(x) replace(x, is.infinite(x),0)))
 
 data = data[,c(2:24)]
