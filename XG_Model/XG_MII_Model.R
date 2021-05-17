@@ -113,7 +113,7 @@ xgb.importance(feature_names = colnames(test[,c(1:22)]), model = xgboost_best, d
 
 xgb.plot.importance(xgb.importance(feature_names = colnames(test[,c(1:22)]), model = xgboost_best, data=test[,c(1:22)], label=test[,23]), top_n = 12)
 
-#generage ROC curve
+#generate ROC curve
 myPred = prediction(xgbpred_best,test[,23])
 perf = ROCR::performance(myPred,"tpr","fpr")
 #calculate AUC
@@ -123,3 +123,9 @@ auc_score = auc@y.values[[1]]
 #plot the curve
 plot(perf,main=paste0("XGBoost ROC curve: AUC= ",auc_score), xlim=c(0,0.95), ylim=c(.55,1),colorize=TRUE)
 
+
+test['Tuned_RF_Preds'] = xgbpred_best
+test['Tuned_RF_preds_Cut'] = xgbpred_best_cut
+
+
+write.csv(test, 'XG_test_out.csv')

@@ -57,14 +57,21 @@ varImpPlot(random_forest_1, cex = .7, main = "Variable Importance",pt.cex = 1,co
 
 rand_seed = 959
 set.seed(rand_seed)
-# create baseline random forest model
+# create tuned random forest model
 parallelStartSocket(cpus=detectCores())
 random_forest_1_best <- randomForest(VAC_PAR ~., data = train, ntree = 51, importance=TRUE, na.action = na.roughfix, maxnodes = 10, mtry = 5)
-preds_1 = predict(random_forest_1_best,test[,-23])
+preds_1_best = predict(random_forest_1_best,test[,-23])
 parallelStop()
 
-preds_1_cut_best = ifelse(preds_1>.5,1,0)
+preds_1_cut_best = ifelse(preds_1_best>.5,1,0)
 confusionMatrix(as.factor(preds_1_cut_best),as.factor(test$VAC_PAR), positive = "1")
 F_meas(as.factor(preds_1_cut_best),as.factor(test$VAC_PAR))
 set.seed(rand_seed)
 varImpPlot(random_forest_1, cex = .7, main = "Variable Importance",pt.cex = 1,color = 'grey41',frame.plot = FALSE,lcolor = 'black')
+
+test['BaseLine_RF_Preds'] = preds_1
+test['BaseLine_RF_preds_Cut'] = preds_1_cut
+test['Tuned_RF_Preds'] = preds_1_best
+test['Tuned_RF_preds_Cut'] = preds_1_cut_best
+
+write.csv(test, 'RF_test_out.csv')
