@@ -106,7 +106,7 @@ df_complete$area_sqft_scaled = normalize(df_complete$area_sqft, method="scale")
 # Remove unnecessary columns for modeling
 # Acct, GIS_parcel_ID, Shape*, X vals
 
-df_all <- select(df_complete,-c(1:5,7, 20:22, 25, 31, 43:46)) 
+df_all <- select(df_complete,-c(1:5,7, 19:21, 24, 30, 42:45)) 
 df_all$vac_par = df_complete$vac_par  # Append vac_par annotations to end of dataframe
 
 summary(df_all)
