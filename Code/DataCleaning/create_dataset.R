@@ -113,12 +113,12 @@ summary(df_all)
 
 
 df_log_and_scaled <- df_all %>%
-  select(vac_par, division_cd, sptd_code, num_div_code, zoning_buckets, log_impr_val, log_land_val, log_tot_val,
+  select(vac_par, num_sptd, num_division_cd, zoning_buckets, log_impr_val, log_land_val, log_tot_val,
          log_area_sqft, count_of_311_scaled, permit_type, count_permits_scaled, days_since_permit_scaled,
          days_from_CO_appro_to_issue_scaled, count_COs_scaled, days_since_issue_scaled, CO_type, sq_ft_scaled,
          occupancy, CO_code_distr, nibrs_crime_against, nibrs_crime_against, count_of_crime_scaled)
 df_not_scaled <- df_all %>%
-  select(vac_par, division_cd, sptd_code, num_div_code, zoning_buckets, impr_val, land_val, tot_val,
+  select(vac_par, num_sptd, num_division_cd, zoning_buckets, impr_val, land_val, tot_val,
          area_sqft, count_of_311, permit_type, count_permits, days_since_permit,
          days_from_CO_appro_to_issue, count_COs, days_since_issue, CO_type, sq_ft,
          occupancy, CO_code_distr, nibrs_crime_against, nibrs_crime_against, count_of_crime)

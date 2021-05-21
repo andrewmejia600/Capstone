@@ -26,7 +26,8 @@ land = land %>%
                                                ifelse(str_detect(ZONING, "OFFICE"), "office",
                                                       ifelse(str_detect(ZONING, "AGRICULTURAL"), "agricultural",
                                                              ifelse(str_detect(ZONING, "RETAIL"), "retail",
-                                                                    ifelse(str_detect(ZONING, "LIQUOR"), "liquor","other"))))))))
+                                                                    ifelse(str_detect(ZONING, "LIQUOR"), "liquor","other")))))))) %>%
+  mutate(zoning_buckets = as.numeric(factor(zoning_buckets)))
 
 summary(land)
 
@@ -34,20 +35,12 @@ summary(land)
 # Calculate total area of parcel in square feet.  Some parcels are measured in acres.
 
 l=as.numeric(length(land$AREA_SIZE))
-i=0
-land$AREA_SQFT=0
 land$AREA_UOM_DESC=as.character(land$AREA_UOM_DESC)
-for(i in 1:l){
-  if (land$AREA_UOM_DESC[i] == 'ACRE')
-  {land$AREA_SQFT[i] = land$AREA_SIZE[i]*43560
-  }
-  else if (land$AREA_UOM_DESC[i] == 'UNASSIGNED'){
-    land$AREA_SQFT[i] = land$FRONT_DIM[i]*land$DEPTH_DIM[i]
-  }
-  else
-  {land$AREA_SQFT[i] = land$AREA_SIZE[i]
-  }
-}
+
+land = land %>%
+  mutate(AREA_SQFT = ifelse(AREA_UOM_DESC=="ACRE", AREA_SIZE*43560,
+                            ifelse(AREA_UOM_DESC=="UNASSIGNED", FRONT_DIM*DEPTH_DIM, 
+                                   AREA_SIZE)))
 
 ## Reduce land dataset to factors we will analyze
 
@@ -95,8 +88,10 @@ apprl_multiple_accounts = df_apprl %>%
 
 barplot(table(df_apprl$division_cd))  #commercial, residential and business personal property bar chart
 
-df_apprl$num_div_code = ifelse(df_apprl$division_cd == 'RES', 1, 
+df_apprl$num_division_cd = ifelse(df_apprl$division_cd == 'RES', 1, 
        ifelse(df_apprl$division_cd == 'COM', 2, 3))
+df_apprl$division_cd = NULL
+
 
 # Evaluate and bin sptd_code = State Property Tax Division Code values
 
@@ -111,7 +106,7 @@ df_apprl$num_div_code = ifelse(df_apprl$division_cd == 'RES', 1,
 # L* = 7 = business personal property
 # S* = 8 = special inventory
 
-x=df_apprl$sptd_code
+x=as.character(df_apprl$sptd_code)
 
 df_apprl$num_sptd = ifelse(startsWith(x,'C'),1,
                            ifelse((x=='O10'),1,
@@ -127,6 +122,9 @@ df_apprl$num_sptd = ifelse(startsWith(x,'C'),1,
                                                                                           ifelse(startsWith(x,'J'),6,
                                                                                                  ifelse(startsWith(x,'L'),7,8)))))))))))))
 
+
+# drop the character version of sptd codes
+df_apprl$sptd_code = NULL
 
 barplot(table(df_apprl$num_sptd))
 
