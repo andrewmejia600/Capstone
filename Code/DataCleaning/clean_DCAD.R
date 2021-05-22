@@ -129,12 +129,23 @@ df_apprl$sptd_code = NULL
 barplot(table(df_apprl$num_sptd))
 
 
+########################## Prepare ACCOUNT_INFO.csv
+
+### This file has additional information about each account.
+
+account_info = read.csv(file=paste0(file_direct,'account_info.csv'), stringsAsFactors = FALSE)
+
+#keeping nbhd_cd, the only feature of interest
+df_account_info = account_info %>%
+  mutate(num_nbhd_cd = as.numeric(factor(NBHD_CD))) %>%
+  select(Acct = ACCOUNT_NUM, num_nbhd_cd)
 
 
-##################### Join land and apprl datasets to create df_DCAD
+##################### Join datasets to create df_DCAD
 
 
-df_DCAD = left_join(df_apprl,df_land, by = c("Acct" = "Acct"), keep = FALSE)
+df_DCAD = left_join(df_apprl,df_land, by = c("Acct" = "Acct"), keep = FALSE) %>%
+  left_join(df_account_info, by = c("Acct" = "Acct"))
 
 # Log (base e) Normalize value factors and area_sqft - range of values is extreme.
 
