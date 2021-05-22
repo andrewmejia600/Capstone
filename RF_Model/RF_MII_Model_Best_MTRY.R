@@ -16,11 +16,43 @@ library(parallel)
 
 
 
-read_data = read.csv('/users/mejiaa/CAPSTONE/Data/df_log_and_scaled.csv')
-data = do.call(data.frame,lapply(read_data, function(x) replace(x, is.infinite(x),0)))
 
-data = data[,c(2:24)]
-colnames(data)[23] <- "VAC_PAR"
+#read_data = read.csv('/users/mejiaa/CAPSTONE/Data/df_log_and_scaled.csv')
+read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/main/Data/df_log_and_scaled.csv')
+#data = do.call(data.frame,lapply(read_data, function(x) replace(x, is.infinite(x),0)))
+
+data = read_data
+colnames(data)[1] = "VAC_PAR"
+
+#######################################################################################################################
+# read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/Andrew/Data/df_log_and_scaled.csv')##
+# 
+# colnames(read_data)[1] = "VAC_PAR"                                                                                 ##
+# 
+# data_1 = read_data                                                                                                 ##  
+# 
+# data = read_data                                                                                                   ##
+# 
+# dmy = dummyVars(~division_cd, data = data, fullRank = T)                                                           ##
+# dat_transformed = data.frame(predict(dmy, newdata = data_1))                                                       ##
+# data = cbind(data, dat_transformed)                                                                                ##
+# 
+# 
+# dmy = dummyVars(~sptd_code, data = data, fullRank = T)                                                             ##
+# dat_transformed = data.frame(predict(dmy, newdata = data_1))                                                       ##
+# data = cbind(data, dat_transformed)                                                                                ##  
+# 
+# dmy = dummyVars(~zoning_buckets, data = data, fullRank = T)                                                        ##
+# dat_transformed = data.frame(predict(dmy, newdata = data_1))                                                       ##  
+# data = cbind(data, dat_transformed)                                                                                ##
+# 
+# data = data[,c(-2,-3,-5)]                                                                                          ##
+
+#######################################################################################################################
+
+
+
+
 
 
 rand_seed = 959
@@ -41,7 +73,7 @@ rand_seed = 959
 set.seed(rand_seed)
 # create baseline random forest model
 parallelStartSocket(cpus=detectCores())
-bestmtry = tuneRF(x = train[,1:22], y = train[,23], stepFactor = 1.5, improve = 1e-5, ntree=500)
+bestmtry = tuneRF(x = train[,2:21], y = train[,1], stepFactor = 1.5, improve = 1e-5, ntree=500)
 parallelStop()
 
 rand_seed = 959
@@ -49,7 +81,7 @@ set.seed(rand_seed)
 # create baseline random forest model
 parallelStartSocket(cpus=detectCores())
 random_forest_1 <- randomForest(VAC_PAR ~., data = train, ntree = 50, importance=TRUE, na.action = na.roughfix, maxnodes = 10)
-preds_1 = predict(random_forest_1,test[-23])
+preds_1 = predict(random_forest_1,test[-1])
 parallelStop()
 
 preds_1_cut = ifelse(preds_1>.5,1,0)
