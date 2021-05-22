@@ -1,0 +1,396 @@
+
+R version 4.0.2 (2020-06-22) -- "Taking Off Again"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> if (!require(caret)) install.packages('caret')
+Loading required package: caret
+Loading required package: lattice
+Loading required package: ggplot2
+> library(caret)
+> 
+> if (!require(parallel)) install.packages('parallel')
+Loading required package: parallel
+> library(parallel)
+> 
+> if (!require(e1071)) install.packages('e1071')
+Loading required package: e1071
+> library(e1071)
+> 
+> if (!require(ggplot2)) install.packages('ggplot2')
+> library(ggplot2)
+> 
+> if (!require(ROCR)) install.packages('ROCR')
+Loading required package: ROCR
+> library(ROCR)
+> 
+> if (!require(mlr)) install.packages('mlr')
+Loading required package: mlr
+Loading required package: ParamHelpers
+Warning message: 'mlr' is in 'maintenance-only' mode since July 2019.
+Future development will only happen in 'mlr3'
+(<https://mlr3.mlr-org.com>). Due to the focus on 'mlr3' there might be
+uncaught bugs meanwhile in {mlr} - please consider switching.
+
+Attaching package: ‘mlr’
+
+The following object is masked from ‘package:ROCR’:
+
+    performance
+
+The following object is masked from ‘package:e1071’:
+
+    impute
+
+The following object is masked from ‘package:caret’:
+
+    train
+
+> library(mlr)
+> 
+> if (!require(parallelMap)) install.packages('parallelMap')
+Loading required package: parallelMap
+> library(parallelMap)
+> 
+> if (!require(xgboost)) install.packages('xgboost')
+Loading required package: xgboost
+> library(xgboost)
+> 
+> 
+> 
+> read_data = read.csv('/users/mejiaa/CAPSTONE/Data/df_log_and_scaled.csv')
+> data = do.call(data.frame,lapply(read_data, function(x) replace(x, is.infinite(x),0)))
+> 
+> data = data[,c(2:24)]
+> colnames(data)[23] <- "VAC_PAR"
+> 
+> 
+> rand_seed = 42
+> set.seed(rand_seed)
+> train_partition =  createDataPartition(
++   y= data$VAC_PAR,
++   p = .70,
++   list = FALSE
++ )
+> train = data[train_partition,]
+> test =  data[-train_partition,]
+> print("Number of records in Training data")
+[1] "Number of records in Training data"
+> nrow(train)
+[1] 236776
+> print("Number of records in Testing data")
+[1] "Number of records in Testing data"
+> nrow(test)
+[1] 101475
+> 
+> train["VAC_PAR"] = as.character(ifelse(train["VAC_PAR"]==1,"T", "F"))
+> test["VAC_PAR"] = as.character(ifelse(test["VAC_PAR"]==1, "T", "F"))
+> traintask <- makeClassifTask (data = train,target = "VAC_PAR")
+> testtask <- makeClassifTask (data = test,target = "VAC_PAR")
+> 
+> lrn <- makeLearner("classif.xgboost",predict.type = "response")
+> lrn$par.vals <- list( objective="binary:logistic", eval_metric="error", nrounds=100L, eta=0.1)
+> 
+> params <- makeParamSet( makeDiscreteParam("booster",values = c("gbtree")), makeIntegerParam("max_depth",lower = 3L,upper = 10L), makeNumericParam("min_child_weight",lower = 1L,upper = 10L), makeNumericParam("subsample",lower = 0.5,upper = 1), makeNumericParam("colsample_bytree",lower = 0.5,upper = 1))
+> 
+> rdesc <- makeResampleDesc("CV",stratify = T,iters=10L)
+> 
+> 
+> 
+> ctrl <- makeTuneControlRandom(maxit = 10L)
+> 
+> parallelStartSocket(cpus=detectCores())
+Starting parallelization in mode=socket with cpus=36.
+> mytune <- tuneParams(learner = lrn, task = traintask, resampling = rdesc, measures = acc, par.set = params, control = ctrl, show.info = T)
+[Tune] Started tuning learner classif.xgboost for parameter set:
+                     Type len Def   Constr Req Tunable Trafo
+booster          discrete   -   -   gbtree   -    TRUE     -
+max_depth         integer   -   -  3 to 10   -    TRUE     -
+min_child_weight  numeric   -   -  1 to 10   -    TRUE     -
+subsample         numeric   -   - 0.5 to 1   -    TRUE     -
+colsample_bytree  numeric   -   - 0.5 to 1   -    TRUE     -
+With control class: TuneControlRandom
+Imputation value: -0
+Exporting objects to slaves for mode socket: .mlr.slave.options
+Mapping in parallel: mode = socket; level = mlr.tuneParams; cpus = 36; elements = 10.
+[Tune] Result: booster=gbtree; max_depth=7; min_child_weight=5.26; subsample=0.653; colsample_bytree=0.77 : acc.test.mean=0.9804921
+> 
+> mytune$y
+acc.test.mean 
+    0.9804921 
+> 
+> lrn_tune <- setHyperPars(lrn,par.vals = mytune$x)
+> 
+> xgmodel <- train(learner = lrn_tune,task = traintask)
+[1]	train-error:0.022553 
+[2]	train-error:0.022553 
+[3]	train-error:0.022549 
+[4]	train-error:0.021632 
+[5]	train-error:0.021522 
+[6]	train-error:0.021408 
+[7]	train-error:0.021451 
+[8]	train-error:0.021417 
+[9]	train-error:0.021273 
+[10]	train-error:0.021147 
+[11]	train-error:0.020999 
+[12]	train-error:0.020728 
+[13]	train-error:0.020636 
+[14]	train-error:0.020378 
+[15]	train-error:0.020467 
+[16]	train-error:0.020412 
+[17]	train-error:0.020331 
+[18]	train-error:0.020306 
+[19]	train-error:0.020327 
+[20]	train-error:0.020247 
+[21]	train-error:0.020306 
+[22]	train-error:0.020171 
+[23]	train-error:0.020171 
+[24]	train-error:0.020112 
+[25]	train-error:0.020070 
+[26]	train-error:0.020044 
+[27]	train-error:0.019858 
+[28]	train-error:0.019858 
+[29]	train-error:0.019757 
+[30]	train-error:0.019592 
+[31]	train-error:0.019546 
+[32]	train-error:0.019491 
+[33]	train-error:0.019554 
+[34]	train-error:0.019529 
+[35]	train-error:0.019309 
+[36]	train-error:0.019297 
+[37]	train-error:0.019309 
+[38]	train-error:0.019322 
+[39]	train-error:0.019305 
+[40]	train-error:0.019267 
+[41]	train-error:0.019263 
+[42]	train-error:0.019250 
+[43]	train-error:0.019208 
+[44]	train-error:0.019200 
+[45]	train-error:0.019111 
+[46]	train-error:0.019107 
+[47]	train-error:0.019098 
+[48]	train-error:0.019115 
+[49]	train-error:0.019081 
+[50]	train-error:0.019077 
+[51]	train-error:0.019043 
+[52]	train-error:0.019001 
+[53]	train-error:0.019018 
+[54]	train-error:0.019026 
+[55]	train-error:0.019010 
+[56]	train-error:0.018988 
+[57]	train-error:0.018984 
+[58]	train-error:0.018955 
+[59]	train-error:0.018950 
+[60]	train-error:0.018950 
+[61]	train-error:0.018929 
+[62]	train-error:0.018895 
+[63]	train-error:0.018942 
+[64]	train-error:0.018955 
+[65]	train-error:0.018895 
+[66]	train-error:0.018857 
+[67]	train-error:0.018798 
+[68]	train-error:0.018765 
+[69]	train-error:0.018748 
+[70]	train-error:0.018731 
+[71]	train-error:0.018760 
+[72]	train-error:0.018773 
+[73]	train-error:0.018739 
+[74]	train-error:0.018752 
+[75]	train-error:0.018786 
+[76]	train-error:0.018781 
+[77]	train-error:0.018781 
+[78]	train-error:0.018773 
+[79]	train-error:0.018769 
+[80]	train-error:0.018748 
+[81]	train-error:0.018760 
+[82]	train-error:0.018748 
+[83]	train-error:0.018735 
+[84]	train-error:0.018727 
+[85]	train-error:0.018710 
+[86]	train-error:0.018705 
+[87]	train-error:0.018655 
+[88]	train-error:0.018651 
+[89]	train-error:0.018621 
+[90]	train-error:0.018629 
+[91]	train-error:0.018621 
+[92]	train-error:0.018613 
+[93]	train-error:0.018579 
+[94]	train-error:0.018553 
+[95]	train-error:0.018511 
+[96]	train-error:0.018486 
+[97]	train-error:0.018486 
+[98]	train-error:0.018465 
+[99]	train-error:0.018473 
+[100]	train-error:0.018486 
+> 
+> xgpred = predict(xgmodel, testtask)
+> parallelStop()
+Stopped parallelization. All cleaned up.
+> 
+> 
+> confusionMatrix(xgpred$data$response,xgpred$data$truth, positive = "T")
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     F     T
+         F 90478   556
+         T  1479  8962
+                                          
+               Accuracy : 0.9799          
+                 95% CI : (0.9791, 0.9808)
+    No Information Rate : 0.9062          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.8869          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.94158         
+            Specificity : 0.98392         
+         Pos Pred Value : 0.85835         
+         Neg Pred Value : 0.99389         
+             Prevalence : 0.09380         
+         Detection Rate : 0.08832         
+   Detection Prevalence : 0.10289         
+      Balanced Accuracy : 0.96275         
+                                          
+       'Positive' Class : T               
+                                          
+> 
+> rand_seed = 959
+> set.seed(rand_seed)
+> train_partition =  createDataPartition(
++   y= data$VAC_PAR,
++   p = .70,
++   list = FALSE
++ )
+> train = data[train_partition,]
+> test =  data[-train_partition,]
+> print("Number of records in Training data")
+[1] "Number of records in Training data"
+> nrow(train)
+[1] 236776
+> print("Number of records in Testing data")
+[1] "Number of records in Testing data"
+> nrow(test)
+[1] 101475
+> 
+> data_train = as.matrix(train[,c(1:22)])
+> data_train_l = as.matrix(train[,c(23)])
+> dtrain = xgb.DMatrix(data = data_train, label = data_train_l)
+> 
+> data_test = as.matrix(test[,c(1:22)])
+> data_test_l = as.matrix(test[,c(23)])
+> dtest = xgb.DMatrix(data = data_test, label = data_test_l  )
+> 
+> rand_seed = 959
+> params = list(booster = "gbtree", objective = "binary:logistic", eta = 0.1, max_depth = 7, min_child_weight=5.26, subsample=0.653, colsample_bytree=0.77)
+> xgboost_best = xgb.train(params = params, data = dtrain, nrounds = 100, watchlist = list(val = dtest, train = dtrain), print_every_n = 10, early_stopping_rounds = 10, maximize = F, eval_metric = "error")
+[1]	val-error:0.023602	train-error:0.022840 
+Multiple eval metrics are present. Will use train_error for early stopping.
+Will train until train_error hasn't improved in 10 rounds.
+
+[11]	val-error:0.021306	train-error:0.020467 
+[21]	val-error:0.020961	train-error:0.020222 
+[31]	val-error:0.021030	train-error:0.019926 
+[41]	val-error:0.020714	train-error:0.019537 
+[51]	val-error:0.020330	train-error:0.019200 
+[61]	val-error:0.020212	train-error:0.019128 
+[71]	val-error:0.020034	train-error:0.018870 
+[81]	val-error:0.019906	train-error:0.018629 
+[91]	val-error:0.019818	train-error:0.018444 
+[100]	val-error:0.019759	train-error:0.018270 
+> 
+> xgbpred_best = predict(xgboost_best,dtest)
+> xgbpred_best_cut =  ifelse(xgbpred_best > 0.50,1,0)
+> 
+> confusionMatrix(as.factor(xgbpred_best_cut), as.factor(data_test_l), positive = "1")
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     0     1
+         0 90630   529
+         1  1476  8840
+                                          
+               Accuracy : 0.9802          
+                 95% CI : (0.9794, 0.9811)
+    No Information Rate : 0.9077          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.8872          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.94354         
+            Specificity : 0.98397         
+         Pos Pred Value : 0.85692         
+         Neg Pred Value : 0.99420         
+             Prevalence : 0.09233         
+         Detection Rate : 0.08712         
+   Detection Prevalence : 0.10166         
+      Balanced Accuracy : 0.96376         
+                                          
+       'Positive' Class : 1               
+                                          
+> F_meas(as.factor(xgbpred_best_cut),as.factor(data_test_l))
+[1] 0.9890596
+> 
+> xgb.importance(feature_names = colnames(test[,c(1:22)]), model = xgboost_best, data=test[,c(1:22)], label=test[,23])
+                               Feature         Gain        Cover    Frequency
+ 1:                      log_area_sqft 3.151086e-01 0.2093136055 0.2008286620
+ 2:           days_since_permit_scaled 2.020940e-01 0.0944496973 0.0787228857
+ 3:                       log_land_val 1.559922e-01 0.2093694296 0.2013161102
+ 4:                    impr_val_scaled 1.473240e-01 0.0749489769 0.0365586156
+ 5:                        log_tot_val 7.175574e-02 0.0975042002 0.1084572264
+ 6:                       log_impr_val 3.143074e-02 0.0607700673 0.0860346088
+ 7:                        permit_type 2.622866e-02 0.0492339324 0.0604435779
+ 8:               count_permits_scaled 2.547153e-02 0.0748691452 0.0570314404
+ 9:                     tot_val_scaled 7.937290e-03 0.0249773667 0.0355837192
+10:                   area_sqft_scaled 6.727498e-03 0.0247570867 0.0545941994
+11:                    land_val_scaled 3.852264e-03 0.0239117544 0.0272970997
+12:              count_of_crime_scaled 3.738419e-03 0.0224720565 0.0260784792
+13:               nibrs_crime_category 8.818719e-04 0.0042088592 0.0102364124
+14: days_from_CO_appro_to_issue_scaled 3.076925e-04 0.0015407004 0.0029246893
+15:            days_since_issue_scaled 3.035459e-04 0.0026522623 0.0034121375
+16:                       sq_ft_scaled 2.200458e-04 0.0073089348 0.0024372410
+17:                nibrs_crime_against 1.436050e-04 0.0022049473 0.0019497928
+18:                          occupancy 1.381527e-04 0.0060410817 0.0021935169
+19:                      CO_code_distr 1.295929e-04 0.0016396252 0.0009748964
+20:                   count_COs_scaled 1.110232e-04 0.0035905785 0.0017060687
+21:                count_of_311_scaled 7.298401e-05 0.0034197037 0.0009748964
+22:                            CO_type 3.059791e-05 0.0008159883 0.0002437241
+                               Feature         Gain        Cover    Frequency
+Warning message:
+In xgb.importance(feature_names = colnames(test[, c(1:22)]), model = xgboost_best,  :
+  xgb.importance: parameters 'data', 'label' and 'target' are deprecated
+> 
+> xgb.plot.importance(xgb.importance(feature_names = colnames(test[,c(1:22)]), model = xgboost_best, data=test[,c(1:22)], label=test[,23]), top_n = 12)
+Warning message:
+In xgb.importance(feature_names = colnames(test[, c(1:22)]), model = xgboost_best,  :
+  xgb.importance: parameters 'data', 'label' and 'target' are deprecated
+> 
+> #generage ROC curve
+> myPred = prediction(xgbpred_best,test[,23])
+> perf = ROCR::performance(myPred,"tpr","fpr")
+> #calculate AUC
+> auc = ROCR::performance(myPred, measure="auc")
+> auc_score = auc@y.values[[1]]
+> 
+> #plot the curve
+> plot(perf,main=paste0("XGBoost ROC curve: AUC= ",auc_score), xlim=c(0,0.95), ylim=c(.55,1),colorize=TRUE)
+> 
+> 

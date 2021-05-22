@@ -1,0 +1,154 @@
+
+R version 4.0.2 (2020-06-22) -- "Taking Off Again"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> if (!require(caret)) install.packages('caret')
+Loading required package: caret
+Loading required package: lattice
+Loading required package: ggplot2
+> library(caret)
+> if (!require(ROCR)) install.packages('ROCR')
+Loading required package: ROCR
+> library(ROCR)
+> 
+> if (!require(mlr)) install.packages('mlr')
+Loading required package: mlr
+Loading required package: ParamHelpers
+Warning message: 'mlr' is in 'maintenance-only' mode since July 2019.
+Future development will only happen in 'mlr3'
+(<https://mlr3.mlr-org.com>). Due to the focus on 'mlr3' there might be
+uncaught bugs meanwhile in {mlr} - please consider switching.
+
+Attaching package: ‘mlr’
+
+The following object is masked from ‘package:ROCR’:
+
+    performance
+
+The following object is masked from ‘package:caret’:
+
+    train
+
+> library(mlr)
+> 
+> if (!require(parallelMap)) install.packages('parallelMap')
+Loading required package: parallelMap
+> library(parallelMap)
+> 
+> if (!require(parallel)) install.packages('parallel')
+Loading required package: parallel
+> library(parallel)
+> 
+> if (!require(naivebayes)) install.packages('naivebayes')
+Loading required package: naivebayes
+naivebayes 0.9.7 loaded
+> library(naivebayes)
+> 
+> if (!require(e1071)) install.packages(e1071)
+Loading required package: e1071
+
+Attaching package: ‘e1071’
+
+The following object is masked from ‘package:mlr’:
+
+    impute
+
+> library(e1071)
+> 
+> 
+> 
+> read_data = read.csv('/users/mejiaa/CAPSTONE/Data/df_log_and_scaled.csv')
+> data = do.call(data.frame,lapply(read_data, function(x) replace(x, is.infinite(x),0)))
+> 
+> data = data[,c(2:24)]
+> colnames(data)[23] = "VAC_PAR"
+> data$VAC_PAR = as.factor(data$VAC_PAR) 
+> 
+> 
+> rand_seed = 959
+> set.seed(rand_seed)
+> train_partition =  createDataPartition(
++   y= data$VAC_PAR,
++   p = .70,
++   list = FALSE
++ )
+> train = data[train_partition,]
+> test =  data[-train_partition,]
+> print("Number of records in Training data")
+[1] "Number of records in Training data"
+> nrow(train)
+[1] 236777
+> print("Number of records in Testing data")
+[1] "Number of records in Testing data"
+> nrow(test)
+[1] 101474
+> 
+> 
+> 
+> rand_seed = 959
+> set.seed(rand_seed)
+> # create baseline nb model
+> parallelStartSocket(cpus=detectCores())
+Starting parallelization in mode=socket with cpus=36.
+> nb_model =  naive_bayes(VAC_PAR ~., data = train, usekernel = T) 
+> preds_1 = predict(nb_model,test[,-23],)
+> 
+> 
+> parallelStop()
+Stopped parallelization. All cleaned up.
+> 
+> 
+> cm = table(preds_1, test$VAC_PAR)
+> cm
+       
+preds_1     0     1
+      0 90134  2427
+      1  1852  7061
+> 
+> # Model Evaluation
+> confusionMatrix(cm)
+Confusion Matrix and Statistics
+
+       
+preds_1     0     1
+      0 90134  2427
+      1  1852  7061
+                                          
+               Accuracy : 0.9578          
+                 95% CI : (0.9566, 0.9591)
+    No Information Rate : 0.9065          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.7443          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.9799          
+            Specificity : 0.7442          
+         Pos Pred Value : 0.9738          
+         Neg Pred Value : 0.7922          
+             Prevalence : 0.9065          
+         Detection Rate : 0.8882          
+   Detection Prevalence : 0.9122          
+      Balanced Accuracy : 0.8620          
+                                          
+       'Positive' Class : 0               
+                                          
+> F_meas(preds_1, test$VAC_PAR)
+[1] 0.9768135
+> 

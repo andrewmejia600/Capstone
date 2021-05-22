@@ -1,0 +1,193 @@
+
+R version 4.0.2 (2020-06-22) -- "Taking Off Again"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> if (!require(randomForest)) install.packages('randomForest')
+Loading required package: randomForest
+randomForest 4.6-14
+Type rfNews() to see new features/changes/bug fixes.
+> library(randomForest)
+> if (!require(caret)) install.packages('caret')
+Loading required package: caret
+Loading required package: lattice
+Loading required package: ggplot2
+
+Attaching package: ‘ggplot2’
+
+The following object is masked from ‘package:randomForest’:
+
+    margin
+
+> library(caret)
+> if (!require(ROCR)) install.packages('ROCR')
+Loading required package: ROCR
+> library(ROCR)
+> 
+> if (!require(mlr)) install.packages('mlr')
+Loading required package: mlr
+Loading required package: ParamHelpers
+Warning message: 'mlr' is in 'maintenance-only' mode since July 2019.
+Future development will only happen in 'mlr3'
+(<https://mlr3.mlr-org.com>). Due to the focus on 'mlr3' there might be
+uncaught bugs meanwhile in {mlr} - please consider switching.
+
+Attaching package: ‘mlr’
+
+The following object is masked from ‘package:ROCR’:
+
+    performance
+
+The following object is masked from ‘package:caret’:
+
+    train
+
+> library(mlr)
+> 
+> if (!require(parallelMap)) install.packages('parallelMap')
+Loading required package: parallelMap
+> library(parallelMap)
+> 
+> if (!require(parallel)) install.packages('parallel')
+Loading required package: parallel
+> library(parallel)
+> 
+> 
+> 
+> #read_data = read.csv('/users/mejiaa/CAPSTONE/Data/df_log_and_scaled.csv')
+> read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/main/Data/df_log_and_scaled.csv')
+> data = do.call(data.frame,lapply(read_data, function(x) replace(x, is.infinite(x),0)))
+> 
+> data = data[,c(2:24)]
+> colnames(data)[23] <- "VAC_PAR"
+> 
+> 
+> rand_seed = 959
+> set.seed(rand_seed)
+> train_partition =  createDataPartition(
++   y= data$VAC_PAR,
++   p = .70,
++   list = FALSE
++ )
+> train = data[train_partition,]
+> test =  data[-train_partition,]
+> print("Number of records in Training data")
+[1] "Number of records in Training data"
+> nrow(train)
+[1] 236759
+> print("Number of records in Testing data")
+[1] "Number of records in Testing data"
+> nrow(test)
+[1] 101468
+> 
+> rand_seed = 959
+> set.seed(rand_seed)
+> # create baseline random forest model
+> parallelStartSocket(cpus=detectCores())
+Starting parallelization in mode=socket with cpus=36.
+> random_forest_1 <- randomForest(VAC_PAR ~., data = train, ntree = 50, importance=TRUE, na.action = na.roughfix, maxnodes = 10)
+Warning message:
+In randomForest.default(m, y, ...) :
+  The response has five or fewer unique values.  Are you sure you want to do regression?
+> preds_1 = predict(random_forest_1,test[,-23])
+> parallelStop()
+Stopped parallelization. All cleaned up.
+> 
+> 
+> 
+> preds_1_cut = ifelse(preds_1>.5,1,0)
+> confusionMatrix(as.factor(preds_1_cut),as.factor(test$VAC_PAR), positive = "1")
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     0     1
+         0 89731   421
+         1  2348  8968
+                                          
+               Accuracy : 0.9727          
+                 95% CI : (0.9717, 0.9737)
+    No Information Rate : 0.9075          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.8512          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.95516         
+            Specificity : 0.97450         
+         Pos Pred Value : 0.79251         
+         Neg Pred Value : 0.99533         
+             Prevalence : 0.09253         
+         Detection Rate : 0.08838         
+   Detection Prevalence : 0.11152         
+      Balanced Accuracy : 0.96483         
+                                          
+       'Positive' Class : 1               
+                                          
+> F_meas(as.factor(preds_1_cut),as.factor(test$VAC_PAR))
+[1] 0.984805
+> set.seed(rand_seed)
+> varImpPlot(random_forest_1, cex = .7, main = "Variable Importance",pt.cex = 1,color = 'grey41',frame.plot = FALSE,lcolor = 'black')
+> 
+> 
+> rand_seed = 959
+> set.seed(rand_seed)
+> # create baseline random forest model
+> parallelStartSocket(cpus=detectCores())
+Starting parallelization in mode=socket with cpus=36.
+> random_forest_1_best <- randomForest(VAC_PAR ~., data = train, ntree = 51, importance=TRUE, na.action = na.roughfix, maxnodes = 10, mtry = 5)
+Warning message:
+In randomForest.default(m, y, ...) :
+  The response has five or fewer unique values.  Are you sure you want to do regression?
+> preds_1 = predict(random_forest_1_best,test[,-23])
+> parallelStop()
+Stopped parallelization. All cleaned up.
+> 
+> preds_1_cut_best = ifelse(preds_1>.5,1,0)
+> confusionMatrix(as.factor(preds_1_cut_best),as.factor(test$VAC_PAR), positive = "1")
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     0     1
+         0 89630   360
+         1  2449  9029
+                                          
+               Accuracy : 0.9723          
+                 95% CI : (0.9713, 0.9733)
+    No Information Rate : 0.9075          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.8501          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.96166         
+            Specificity : 0.97340         
+         Pos Pred Value : 0.78664         
+         Neg Pred Value : 0.99600         
+             Prevalence : 0.09253         
+         Detection Rate : 0.08898         
+   Detection Prevalence : 0.11312         
+      Balanced Accuracy : 0.96753         
+                                          
+       'Positive' Class : 1               
+                                          
+> F_meas(as.factor(preds_1_cut_best),as.factor(test$VAC_PAR))
+[1] 0.9845718
+> set.seed(rand_seed)
+> varImpPlot(random_forest_1, cex = .7, main = "Variable Importance",pt.cex = 1,color = 'grey41',frame.plot = FALSE,lcolor = 'black')
+> 
