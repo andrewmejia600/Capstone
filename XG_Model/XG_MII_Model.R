@@ -23,13 +23,38 @@ if (!require(xgboost)) install.packages('xgboost')
 library(xgboost)
 
 
+#read_data = read.csv('/users/mejiaa/CAPSTONE/Data/df_log_and_scaled.csv')
+read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/main/Data/df_log_and_scaled.csv')
+#data = do.call(data.frame,lapply(read_data, function(x) replace(x, is.infinite(x),0)))
 
-read_data = read.csv('/users/mejiaa/CAPSTONE/Data/df_log_and_scaled.csv')
-data = do.call(data.frame,lapply(read_data, function(x) replace(x, is.infinite(x),0)))
+data = read_data
+colnames(data)[1] = "VAC_PAR"
 
-data = data[,c(2:24)]
-colnames(data)[23] <- "VAC_PAR"
+#######################################################################################################################
+# read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/Andrew/Data/df_log_and_scaled.csv')##
+# 
+# colnames(read_data)[1] = "VAC_PAR"                                                                                 ##
+# 
+# data_1 = read_data                                                                                                 ##  
+# 
+# data = read_data                                                                                                   ##
+# 
+# dmy = dummyVars(~division_cd, data = data, fullRank = T)                                                           ##
+# dat_transformed = data.frame(predict(dmy, newdata = data_1))                                                       ##
+# data = cbind(data, dat_transformed)                                                                                ##
+# 
+# 
+# dmy = dummyVars(~sptd_code, data = data, fullRank = T)                                                             ##
+# dat_transformed = data.frame(predict(dmy, newdata = data_1))                                                       ##
+# data = cbind(data, dat_transformed)                                                                                ##  
+# 
+# dmy = dummyVars(~zoning_buckets, data = data, fullRank = T)                                                        ##
+# dat_transformed = data.frame(predict(dmy, newdata = data_1))                                                       ##  
+# data = cbind(data, dat_transformed)                                                                                ##
+# 
+# data = data[,c(-2,-3,-5)]                                                                                          ##
 
+#######################################################################################################################
 
 rand_seed = 42
 set.seed(rand_seed)
@@ -45,6 +70,8 @@ nrow(train)
 print("Number of records in Testing data")
 nrow(test)
 
+
+##### Create best tune using all features 
 train["VAC_PAR"] = as.character(ifelse(train["VAC_PAR"]==1,"T", "F"))
 test["VAC_PAR"] = as.character(ifelse(test["VAC_PAR"]==1, "T", "F"))
 traintask <- makeClassifTask (data = train,target = "VAC_PAR")
@@ -76,6 +103,7 @@ parallelStop()
 
 confusionMatrix(xgpred$data$response,xgpred$data$truth, positive = "T")
 
+#### Generate new seed for test train split for actual model from best tune 
 rand_seed = 959
 set.seed(rand_seed)
 train_partition =  createDataPartition(
@@ -90,12 +118,16 @@ nrow(train)
 print("Number of records in Testing data")
 nrow(test)
 
-data_train = as.matrix(train[,c(1:22)])
-data_train_l = as.matrix(train[,c(23)])
+####### Train Features 
+data_train = as.matrix(train[,c(2:21)])
+####### Train Target Labels
+data_train_l = as.matrix(train[,c(1)])
 dtrain = xgb.DMatrix(data = data_train, label = data_train_l)
 
-data_test = as.matrix(test[,c(1:22)])
-data_test_l = as.matrix(test[,c(23)])
+###### Test Features
+data_test = as.matrix(test[,c(2:21)])
+###### Test Target Labels
+data_test_l = as.matrix(test[,c(1)])
 dtest = xgb.DMatrix(data = data_test, label = data_test_l  )
 
 rand_seed = 959
@@ -108,13 +140,13 @@ xgbpred_best_cut =  ifelse(xgbpred_best > 0.50,1,0)
 confusionMatrix(as.factor(xgbpred_best_cut), as.factor(data_test_l), positive = "1")
 F_meas(as.factor(xgbpred_best_cut),as.factor(data_test_l))
 
-xgb.importance(feature_names = colnames(test[,c(1:22)]), model = xgboost_best, data=test[,c(1:22)], label=test[,23])
+xgb.importance(feature_names = colnames(test[,c(2:21)]), model = xgboost_best, data=test[,c(2:21)], label=test[,1])
 
-xgb.plot.importance(xgb.importance(feature_names = colnames(test[,c(1:22)]), model = xgboost_best, data=test[,c(1:22)], label=test[,23]), top_n = 12)
+xgb.plot.importance(xgb.importance(feature_names = colnames(test[,c(2:21)]), model = xgboost_best, data=test[,c(2:21)], label=test[,1]), top_n = 12)
 
 
 #generate ROC curve
-myPred = prediction(xgbpred_best,test[,23])
+myPred = prediction(xgbpred_best,test[,1])
 
 
 
