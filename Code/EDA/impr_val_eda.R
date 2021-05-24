@@ -15,9 +15,11 @@ df %>%
   ggplot(aes(x=factor(vac_par), y=log_impr_val, fill=factor(vac_par))) +
   geom_boxplot() +
   ggtitle("Log Improvement Value by Vacant/Non-Vacant") +
-  xlab("Vacant (1) or Non-Vacant (0)")
+  xlab("Non-Vacant (0) or Vacant (1)") +
+  ylab("Log Improvement Value ($)") +
+  labs(fill = "Non-Vacant (0) or Vacant (1)")
 
 ggsave(
   filename = "log_impr_val_boxplot.png",
   plot = last_plot(),
-  path = "../../Figures/")
+  path = "../../Figures")
