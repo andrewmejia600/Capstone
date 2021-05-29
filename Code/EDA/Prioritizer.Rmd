@@ -1,0 +1,114 @@
+---
+title: "Prioritizer"
+author: "Tina Pai"
+date: "5/29/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+calculate_mode <- function(x) {
+  uniqx <- unique(na.omit(x))
+  uniqx[which.max(tabulate(match(x, uniqx)))]
+}
+```
+
+
+```{r}
+df <- read.csv("../../Data/df_all_with_Acct_GIS.csv", stringsAsFactors = FALSE)
+
+```
+
+## Features of Interest
+
+In prioritizing lots for remediation, the features of interest are:
+1) the number of crime incidents near it
+2) the number of 311 calls near it
+3) the number of nearby vacant lots
+4) the size of the lot
+
+```{r cars}
+
+### NEIGHBORHOODS WITH HIGH PROPORTION OF VACANT PARCELS
+
+df_nbhd = df %>%
+  group_by(Acct) %>%
+  summarise(vac_par = max(vac_par), NBHD_CD = calculate_mode(NBHD_CD), area_sqft=median(area_sqft)) %>%
+  ungroup() %>%
+  group_by(NBHD_CD) %>%
+  summarise(cnt_is_vac_par = sum(vac_par==1), cnt_not_vac_par = sum(vac_par==0), pct_vac_par = cnt_is_vac_par/(cnt_is_vac_par + cnt_not_vac_par), nbhd_area_sqft=sum(area_sqft))
+
+df_gg <- df_nbhd %>% 
+  filter(cnt_is_vac_par > 1) %>%
+  arrange(desc(pct_vac_par)) %>% 
+  top_n(10, pct_vac_par)
+  
+print(df_gg)
+write.csv(df_gg, "../../Figures/Top_10_Vacant_Neighborhoods.csv")
+library(tidyr)
+
+df_gg %>%
+  gather(Key, cnt_parcels, cnt_is_vac_par, cnt_not_vac_par) %>%
+  ggplot(aes(x = NBHD_CD, y = cnt_parcels, fill = Key, label = paste0("\n", scales::percent(pct_vac_par), "\n (n=", (cnt_parcels), ")\n"))) + 
+  geom_col(position = 'fill') + 
+  geom_text(position = 'fill',    # move to center of bars
+            vjust = 1,    # nudge above top of bar
+            size = 3) + 
+  scale_y_continuous(labels = scales::percent) + 
+  theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 Neighborhoods With Highest Percent Vacant Parcels")
+
+```
+
+
+```{r}
+### ADD COLUMN FOR NUMBER OF VACANT PARCELS IN THE NEIGHBORHOOD
+
+df <- df %>%
+  left_join(df_nbhd, by=c("NBHD_CD"="NBHD_CD"))
+```
+
+## Top Priority Vacant Parcels
+
+
+In aggregate by gis parcel id
+```{r vacant}
+
+df_gg <- df %>% 
+  filter(vac_par==1) %>%
+  group_by(GIS_parcel_ID) %>%
+  summarise(cnt = n(), cnt_311 = sum(count_of_311), cnt_crime = sum(count_of_crime), area_sqft=median(area_sqft), nbhd_pct_vac_par = median(pct_vac_par), nbhd_cnt_vac_par = median(cnt_is_vac_par), neighborhood=calculate_mode(NBHD_CD))
+
+df_gg <- df_gg %>% 
+  arrange(desc(cnt_crime)) %>% 
+  top_n(10, nbhd_pct_vac_par)
+  
+df_gg
+```
+
+```{r}
+df %>%
+  filter(Acct=="00000136324000000")
+```
+
+```{r vacant}
+
+df_gg <- df %>% 
+  filter(vac_par==1) %>%
+  select(count_of_311, count_of_crime, area_sqft, NBHD_CD)
+
+df_gg <- df_gg %>% 
+  arrange(desc(count_of_crime)) %>% 
+  top_n(10, count_of_crime)
+  
+df_gg
+```
