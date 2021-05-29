@@ -11,7 +11,9 @@
 library(dplyr)
 library(tidyverse)
 #file_direct = "C:/SMU_Local/data/capstone/Data/DCAD2019_CURRENT/"
-file_direct = "/Users/tina/Documents/School/Capstone/Dallas Files/DCAD2019_CERTIFIED_07252019/"
+file_direct = "/Users/tina/Documents/School/Capstone/Dallas Files/DCAD2019_CURRENT/"
+gis_file_direct = "/Users/tina/Documents/School/Capstone/Dallas Files/GIS_PACKAGE_FILES_TO_CSV/"
+
 #####################  Prepare land.csv 
 
 land = read.csv(file=paste0(file_direct,'land.csv'), stringsAsFactors = FALSE)
@@ -91,6 +93,8 @@ barplot(table(df_apprl$division_cd))  #commercial, residential and business pers
 
 df_apprl$num_division_cd = ifelse(df_apprl$division_cd == 'RES', 1, 
        ifelse(df_apprl$division_cd == 'COM', 2, 3))
+
+# delete the original text version of the column
 df_apprl$division_cd = NULL
 
 
@@ -124,7 +128,7 @@ df_apprl$num_sptd = ifelse(startsWith(x,'C'),1,
                                                                                                  ifelse(startsWith(x,'L'),7,8)))))))))))))
 
 
-# drop the character version of sptd codes
+# delete the original text version of the column
 df_apprl$sptd_code = NULL
 
 barplot(table(df_apprl$num_sptd))
@@ -139,7 +143,7 @@ account_info = read.csv(file=paste0(file_direct,'account_info.csv'), stringsAsFa
 #keeping nbhd_cd, the only feature of interest
 df_account_info = account_info %>%
   mutate(num_nbhd_cd = as.numeric(factor(NBHD_CD))) %>%
-  select(Acct = ACCOUNT_NUM, num_nbhd_cd)
+  select(Acct = ACCOUNT_NUM, NBHD_CD, num_nbhd_cd)
 
 print(df_account_info %>% count(Acct) %>% arrange(desc(n))) # no duplicate accounts
 
@@ -163,4 +167,4 @@ print(head(df_DCAD_acct_counts))
 # Note:  Values include parcels outside of City of Dallas.
 # DCAD continuous factors will be scaled after left join with df in create_dataset.r
 
-write.csv(df_DCAD, paste0(gis_file_direct, 'clean_DCAD.csv'),quote = TRUE,  row.names=FALSE)
+write.csv(df_DCAD, paste0(gis_file_direct, 'clean_DCAD.csv'),quote = TRUE, row.names=FALSE)
