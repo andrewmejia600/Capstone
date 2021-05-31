@@ -86,12 +86,16 @@ df_complete = df %>%
     left_join(df_bp, by = c("Acct" = "Acct"), keep = FALSE) %>%
     left_join(df_CO, by = c("Acct" = "Acct"), keep = FALSE) %>%
     left_join(df_crime, by = c("Acct" = "Acct"), keep = FALSE)
-  
+
+
 summary(df_complete)
 
 # NO NA values in target vac_par
 # Replace all NA values with 0
 df_complete[is.na(df_complete)] <- 0
+
+#remove any duplicate rows
+df_complete = distinct(df_complete)
 
 summary(df_complete)
 
@@ -111,24 +115,28 @@ excluded_vars = c("fid", "Acct", "gis_parcel_id",
 df_all <- select(df_complete,-one_of(excluded_vars))
 df_all$vac_par = df_complete$vac_par  # Append vac_par annotations to end of dataframe
 
+
 summary(df_all)
 
 
 df_log_and_scaled <- df_all %>%
   select(vac_par, num_sptd, num_division_cd, num_nbhd_cd, zoning_buckets, log_impr_val, log_land_val, log_tot_val,
          log_area_sqft, count_of_311_scaled, permit_type, count_permits_scaled, days_since_permit_scaled,
-         days_from_CO_appro_to_issue_scaled, count_COs_scaled, days_since_issue_scaled, CO_type, sq_ft_scaled,
+         days_from_CO_appro_to_issue_scaled, count_COs_scaled, days_since_issue_scaled, CO_type, CO_sqft_scaled,
          occupancy, CO_code_distr, count_of_crime_scaled)
 df_not_scaled <- df_all %>%
   select(vac_par, num_sptd, num_division_cd, num_nbhd_cd, zoning_buckets, impr_val, land_val, tot_val,
          area_sqft, count_of_311, permit_type, count_permits, days_since_permit,
-         days_from_CO_appro_to_issue, count_COs, days_since_issue, CO_type, sq_ft,
+         days_from_CO_appro_to_issue, count_COs, days_since_issue, CO_type, CO_sqft,
          occupancy, CO_code_distr, count_of_crime)
 df_all_with_Acct_GIS <- cbind("Acct"=df_complete$Acct,"GIS_parcel_ID"=df_complete$gis_parcel_id,df_all)
 
 # print out whether any values are NaN or NA or -Inf or Inf
 # if any of these are >0, fix something
 colSums(!sapply(df_log_and_scaled, is.finite))
+
+# print out the count by accounts to check for duplicates; make sure these all say 1
+head(df_all_with_Acct_GIS %>% count(Acct) %>% arrange(desc(n)))
 
 # Write the data set to a file
 write.csv(df_all, "../../Data/df_all.csv", row.names = FALSE)
