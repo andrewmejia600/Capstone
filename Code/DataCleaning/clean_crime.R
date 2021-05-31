@@ -17,10 +17,8 @@ head(df)
 new_df <- df %>% 
   filter(year_of_incident==2019) %>% 
   group_by(Acct) %>%
-  summarise(count_of_crime = n())
+  summarise(count_of_crime = n()) %>% # count number of 311 aggregated by account number
+  mutate(count_of_crime_scaled = scale(count_of_crime, center = FALSE)[,1]) # scale the data
 
-#scaling the data
-x = new_df$count_of_crime
-new_df$count_of_crime_scaled <- scale(x, center = FALSE)
-
+head(new_df)
 write.csv(new_df, '../../Data/clean_crime.csv')
