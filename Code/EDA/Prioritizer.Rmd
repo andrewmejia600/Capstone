@@ -96,6 +96,8 @@ df_gg <- df_gg %>%
   top_n(10, nbhd_pct_vac_par)
   
 df_gg
+
+write.csv(df_gg, "../../Figures/Parcel_Rankings.csv")
 ```
 
 ```{r}
