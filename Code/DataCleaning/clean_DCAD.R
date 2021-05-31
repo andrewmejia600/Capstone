@@ -163,4 +163,4 @@ print(head(df_DCAD_acct_counts))
 # Note:  Values include parcels outside of City of Dallas.
 # DCAD continuous factors will be scaled after left join with df in create_dataset.r
 
-write.csv(df_DCAD, '../../Data/clean_DCAD.csv',quote = TRUE,  row.names=FALSE)
+write.csv(df_DCAD, paste0(gis_file_direct, 'clean_DCAD.csv'),quote = TRUE,  row.names=FALSE)
