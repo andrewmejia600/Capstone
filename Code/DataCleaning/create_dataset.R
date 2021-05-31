@@ -106,9 +106,8 @@ df_complete$area_sqft_scaled = normalize(df_complete$area_sqft, method="scale")
 # Remove unnecessary columns for modeling
 # Acct, GIS_parcel_ID, Shape*, X vals
 # c(1:5,7, 20:22, 25, 31, 43:46)
-excluded_vars = c("fid", "Acct", "RecAcs.x", "Shape_STAr.x", "Shape_STLe.x", "gis_parcel_id",
-  "X.x", "Shape_STAr.y", "Shape_STLe.y", "X.y", "X.x.x", "X.y.y", "Shape_STAr",
-  "Shape_STLe", "RecAcs.y")
+excluded_vars = c("fid", "Acct", "gis_parcel_id",
+  "X.x", "X.y", "X.x.x", "X.y.y", "Shape_STAr", "Shape_STLe")
 df_all <- select(df_complete,-one_of(excluded_vars))
 df_all$vac_par = df_complete$vac_par  # Append vac_par annotations to end of dataframe
 
@@ -119,12 +118,12 @@ df_log_and_scaled <- df_all %>%
   select(vac_par, num_sptd, num_division_cd, num_nbhd_cd, zoning_buckets, log_impr_val, log_land_val, log_tot_val,
          log_area_sqft, count_of_311_scaled, permit_type, count_permits_scaled, days_since_permit_scaled,
          days_from_CO_appro_to_issue_scaled, count_COs_scaled, days_since_issue_scaled, CO_type, sq_ft_scaled,
-         occupancy, CO_code_distr, nibrs_crime_against, nibrs_crime_against, count_of_crime_scaled)
+         occupancy, CO_code_distr, count_of_crime_scaled)
 df_not_scaled <- df_all %>%
   select(vac_par, num_sptd, num_division_cd, num_nbhd_cd, zoning_buckets, impr_val, land_val, tot_val,
          area_sqft, count_of_311, permit_type, count_permits, days_since_permit,
          days_from_CO_appro_to_issue, count_COs, days_since_issue, CO_type, sq_ft,
-         occupancy, CO_code_distr, nibrs_crime_against, nibrs_crime_against, count_of_crime)
+         occupancy, CO_code_distr, count_of_crime)
 df_all_with_Acct_GIS <- cbind("Acct"=df_complete$Acct,"GIS_parcel_ID"=df_complete$gis_parcel_id,df_all)
 
 # print out whether any values are NaN or NA or -Inf or Inf
