@@ -24,7 +24,7 @@ calculate_mode <- function(x) {
 
 
 ```{r}
-df <- read.csv("../../Data/df_all_with_Acct_GIS.csv", stringsAsFactors = FALSE)
+df <- read.csv("../../Data/df_all_with_Acct_GIS.csv", stringsAsFactors = FALSE, nrows = 10000)
 
 ```
 
