@@ -66,6 +66,7 @@ df_land_unique = df_land %>% filter(!(df_land$Acct %in% land_multiple_accounts$A
 
 summary(df_land_unique)  #718251 observations
 
+print(df_land_unique %>% count(Acct) %>% arrange(desc(n))) #there are no duplicate account numbers now
 
 ########################## Prepare ACCOUNT_APPRL_YEAR.csv
 
@@ -140,12 +141,14 @@ df_account_info = account_info %>%
   mutate(num_nbhd_cd = as.numeric(factor(NBHD_CD))) %>%
   select(Acct = ACCOUNT_NUM, num_nbhd_cd)
 
+print(df_account_info %>% count(Acct) %>% arrange(desc(n))) # no duplicate accounts
 
 ##################### Join datasets to create df_DCAD
 
 
-df_DCAD = left_join(df_apprl,df_land, by = c("Acct" = "Acct"), keep = FALSE) %>%
-  left_join(df_account_info, by = c("Acct" = "Acct"))
+df_DCAD = left_join(df_apprl,df_land_unique, by = c("Acct" = "Acct"), keep = FALSE) %>%
+  left_join(df_account_info, by = c("Acct" = "Acct")) %>%
+  distinct()
 
 # Log (base e) Normalize value factors and area_sqft - range of values is extreme.
 
@@ -153,6 +156,9 @@ df_DCAD$log_impr_val = log(df_DCAD$impr_val + 1)
 df_DCAD$log_land_val = log(df_DCAD$land_val + 1)
 df_DCAD$log_tot_val = log(df_DCAD$tot_val + 1)
 df_DCAD$log_area_sqft = log(df_DCAD$area_sqft + 1)
+
+df_DCAD_acct_counts = df_DCAD %>% count(Acct) %>% arrange(desc(n)) 
+print(head(df_DCAD_acct_counts)) 
 
 # Note:  Values include parcels outside of City of Dallas.
 # DCAD continuous factors will be scaled after left join with df in create_dataset.r
