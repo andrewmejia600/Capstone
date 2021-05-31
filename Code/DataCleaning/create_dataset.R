@@ -80,6 +80,13 @@ df_bp = read.csv('../../Data/clean_building_permits.csv', stringsAsFactors = FAL
 df_CO = read.csv('../../Data/clean_cert_occupancy.csv', stringsAsFactors = FALSE)
 df_crime = read.csv('../../Data/clean_crime.csv', stringsAsFactors = FALSE)
 
+#print number of duplicate account number rows 
+print(df_DCAD %>% count(Acct) %>% arrange(desc(n)))
+print(df_311 %>% count(Acct) %>% arrange(desc(n)))
+print(df_bp %>% count(Acct) %>% arrange(desc(n)))
+print(df_CO %>% count(Acct) %>% arrange(desc(n)))
+print(df_crime %>% count(Acct) %>% arrange(desc(n)))
+
 df_complete = df %>% 
     left_join(df_DCAD, by = c("Acct" = "Acct"), keep = FALSE) %>%
     left_join(df_311, by = c("Acct" = "Acct"), keep = FALSE) %>%
