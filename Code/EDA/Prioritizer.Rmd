@@ -45,7 +45,8 @@ df_nbhd = df %>%
   summarise(vac_par = max(vac_par), NBHD_CD = calculate_mode(NBHD_CD), area_sqft=median(area_sqft)) %>%
   ungroup() %>%
   group_by(NBHD_CD) %>%
-  summarise(cnt_is_vac_par = sum(vac_par==1), cnt_not_vac_par = sum(vac_par==0), pct_vac_par = cnt_is_vac_par/(cnt_is_vac_par + cnt_not_vac_par), nbhd_area_sqft=sum(area_sqft))
+  summarise(cnt_is_vac_par = sum(vac_par==1), cnt_not_vac_par = sum(vac_par==0), pct_vac_par = cnt_is_vac_par/(cnt_is_vac_par + cnt_not_vac_par), nbhd_area_sqft=sum(area_sqft)) %>%
+  mutate(cnt_is_vac_par_scaled = normalize(cnt_is_vac_par, method="standardize"))
 
 df_gg <- df_nbhd %>% 
   filter(cnt_is_vac_par > 1) %>%
@@ -73,7 +74,7 @@ library(tidyr)
 ```{r}
 ### ADD COLUMN FOR NUMBER OF VACANT PARCELS IN THE NEIGHBORHOOD
 
-df <- df %>%
+df_with_nbhd <- df %>%
   left_join(df_nbhd, by=c("NBHD_CD"="NBHD_CD"))
 
 account_counts = df %>% count(Acct) %>% arrange(desc(n)) #make sure all n==1 so no accounts are duplicate
@@ -86,18 +87,17 @@ head(account_counts)
 In aggregate by gis parcel id
 ```{r vacant}
 
-df_gg <- df %>% 
-  filter(vac_par==1) %>%
-  group_by(GIS_parcel_ID) %>%
-  summarise(cnt = n(), cnt_311 = sum(count_of_311), cnt_crime = sum(count_of_crime), area_sqft=median(area_sqft), nbhd_pct_vac_par = median(pct_vac_par), nbhd_cnt_vac_par = median(cnt_is_vac_par), neighborhood=calculate_mode(NBHD_CD))
+# df_gg <- df %>% 
+#   filter(vac_par==1) %>%
+#   group_by(GIS_parcel_ID) %>%
+#   summarise(cnt = n(), cnt_311 = sum(count_of_311), cnt_crime = sum(count_of_crime), area_sqft=median(area_sqft), nbhd_pct_vac_par = median(pct_vac_par), nbhd_cnt_vac_par = median(cnt_is_vac_par), neighborhood=calculate_mode(NBHD_CD))
+# 
+# df_gg <- df_gg %>% 
+#   arrange(desc(cnt_crime))  %>% 
+#   top_n(10, cnt_crime)
+#   
+# head(df_gg, 10)
 
-df_gg <- df_gg %>% 
-  arrange(desc(cnt_crime)) %>% 
-  top_n(10, nbhd_pct_vac_par)
-  
-df_gg
-
-write.csv(df_gg, "../../Figures/Parcel_Rankings.csv")
 ```
 
 ```{r}
@@ -107,16 +107,19 @@ write.csv(df_gg, "../../Figures/Parcel_Rankings.csv")
 
 ## Top 
 
-```{r vacant}
+```{r}
 
-df_gg <- df %>% 
+df_priority <- df_with_nbhd %>% 
   filter(vac_par==1) %>%
-  select(GIS_parcel_ID, count_of_311, count_of_crime, area_sqft, nbhd_pct_vac_par=pct_vac_par,
+  mutate(priority_rank = 1*count_of_crime_scaled + .8*count_of_311_scaled + 2*pct_vac_par + .2*cnt_is_vac_par_scaled) %>%
+  select(priority_rank, GIS_parcel_ID, count_of_311, count_of_crime, area_sqft, nbhd_pct_vac_par=pct_vac_par,
          nbhd_cnt_vac_par=cnt_is_vac_par, neighborhood=NBHD_CD)
 
-df_gg <- df_gg %>% 
-  arrange(desc(count_of_crime)) %>% 
-  top_n(10, count_of_crime)
+df_priority <- df_priority %>% 
+  arrange(desc(priority_rank))
   
-df_gg
+head(df_priority)
+
+
+write.csv(df_priority, "../../Figures/Parcel_Rankings.csv")
 ```
