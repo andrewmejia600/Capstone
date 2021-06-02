@@ -24,6 +24,9 @@ read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/
 data = read_data
 colnames(data)[1] = "VAC_PAR"
 
+#Simpler model
+data = data[,c(1,3,6,7,8,9)]
+
 #######################################################################################################################
 # read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/Andrew/Data/df_log_and_scaled.csv')##
 # 
@@ -73,14 +76,14 @@ rand_seed = 959
 set.seed(rand_seed)
 # create baseline random forest model
 parallelStartSocket(cpus=detectCores())
-bestmtry = tuneRF(x = train[,2:21], y = train[,1], stepFactor = 1.5, improve = 1e-5, ntree=500)
+bestmtry = tuneRF(x = train[,2:6], y = train[,1], stepFactor = 1.5, improve = 1e-5, ntree=11)
 parallelStop()
 
 rand_seed = 959
 set.seed(rand_seed)
 # create baseline random forest model
 parallelStartSocket(cpus=detectCores())
-random_forest_1 <- randomForest(VAC_PAR ~., data = train, ntree = 50, importance=TRUE, na.action = na.roughfix, maxnodes = 10)
+random_forest_1 <- randomForest(VAC_PAR ~., data = train, ntree = 11, importance=TRUE, na.action = na.roughfix, maxnodes = 10)
 preds_1 = predict(random_forest_1,test[-1])
 parallelStop()
 

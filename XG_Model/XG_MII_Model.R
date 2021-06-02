@@ -31,7 +31,7 @@ data = read_data
 colnames(data)[1] = "VAC_PAR"
 
 #Simpler Model
-#data = data[,c(1,3,6,7,8,9)]
+data = data[,c(1,3,6,7,8,9)]
 
 
 #######################################################################################################################
@@ -144,7 +144,7 @@ xgbpred_best_cut =  ifelse(xgbpred_best > 0.50,1,0)
 confusionMatrix(as.factor(xgbpred_best_cut), as.factor(data_test_l), positive = "1")
 F_meas(as.factor(xgbpred_best_cut),as.factor(data_test_l))
 
-xgb.importance(feature_names = colnames(test[,c(2:6)]), model = xgboost_best, data=test[,c(2:6)], label=test[,1])
+xgb.importance(feature_names = colnames(test[,c(2:6)]), model = xgboost_best, data=test[,c(2:21)], label=test[,1])
 
 xgb.plot.importance(xgb.importance(feature_names = colnames(test[,c(2:6)]), model = xgboost_best, data=test[,c(2:6)], label=test[,1]), top_n = 12)
 
@@ -169,4 +169,5 @@ test['Tuned_XG_preds_Cut'] = xgbpred_best_cut
 
 write.csv(test, 'XG_test_out.csv')
 
-saveRDS(xgboost_best, "./final_model.rds")
+
+xgb.save(xgboost_best, "xgbFinal")

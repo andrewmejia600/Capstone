@@ -25,7 +25,7 @@ colnames(data)[1] = "VAC_PAR"
 
 
 #Simpler model features. 
-#data = data[,c(1,3,6,7,8,9)]
+data = data[,c(1,3,6,7,8,9)]
 
 #######################################################################################################################
 # read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/Andrew/Data/df_log_and_scaled.csv')##
@@ -112,4 +112,4 @@ test['Tuned_RF_preds_Cut'] = preds_1_cut_best
 
 write.csv(test, 'RF_test_out.csv')
 
-saveRDS(random_forest_1_best, "./final_model.rds")
+saveRDS(random_forest_1_best, "./RF_final_model.rds")
