@@ -30,6 +30,10 @@ read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/
 data = read_data
 colnames(data)[1] = "VAC_PAR"
 
+#Simpler Model
+#data = data[,c(1,3,6,7,8,9)]
+
+
 #######################################################################################################################
 # read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/Andrew/Data/df_log_and_scaled.csv')##
 # 
@@ -119,13 +123,13 @@ print("Number of records in Testing data")
 nrow(test)
 
 ####### Train Features 
-data_train = as.matrix(train[,c(2:21)])
+data_train = as.matrix(train[,c(2:6)])
 ####### Train Target Labels
 data_train_l = as.matrix(train[,c(1)])
 dtrain = xgb.DMatrix(data = data_train, label = data_train_l)
 
 ###### Test Features
-data_test = as.matrix(test[,c(2:21)])
+data_test = as.matrix(test[,c(2:6)])
 ###### Test Target Labels
 data_test_l = as.matrix(test[,c(1)])
 dtest = xgb.DMatrix(data = data_test, label = data_test_l  )
@@ -140,9 +144,9 @@ xgbpred_best_cut =  ifelse(xgbpred_best > 0.50,1,0)
 confusionMatrix(as.factor(xgbpred_best_cut), as.factor(data_test_l), positive = "1")
 F_meas(as.factor(xgbpred_best_cut),as.factor(data_test_l))
 
-xgb.importance(feature_names = colnames(test[,c(2:21)]), model = xgboost_best, data=test[,c(2:21)], label=test[,1])
+xgb.importance(feature_names = colnames(test[,c(2:6)]), model = xgboost_best, data=test[,c(2:6)], label=test[,1])
 
-xgb.plot.importance(xgb.importance(feature_names = colnames(test[,c(2:21)]), model = xgboost_best, data=test[,c(2:21)], label=test[,1]), top_n = 12)
+xgb.plot.importance(xgb.importance(feature_names = colnames(test[,c(2:6)]), model = xgboost_best, data=test[,c(2:6)], label=test[,1]), top_n = 12)
 
 
 #generate ROC curve
@@ -159,8 +163,10 @@ auc_score = auc@y.values[[1]]
 plot(perf,main=paste0("XGBoost ROC curve: AUC= ",auc_score), xlim=c(0,0.95), ylim=c(.55,1),colorize=TRUE)
 
 
-test['Tuned_RF_Preds'] = xgbpred_best
-test['Tuned_RF_preds_Cut'] = xgbpred_best_cut
+test['Tuned_XG_Preds'] = xgbpred_best
+test['Tuned_XG_preds_Cut'] = xgbpred_best_cut
 
 
 write.csv(test, 'XG_test_out.csv')
+
+saveRDS(xgboost_best, "./final_model.rds")
