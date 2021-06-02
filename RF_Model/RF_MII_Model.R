@@ -23,6 +23,10 @@ read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/
 data = read_data
 colnames(data)[1] = "VAC_PAR"
 
+
+#Simpler model features. 
+#data = data[,c(1,3,6,7,8,9)]
+
 #######################################################################################################################
 # read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/Andrew/Data/df_log_and_scaled.csv')##
 # 
@@ -72,7 +76,7 @@ rand_seed = 959
 set.seed(rand_seed)
 # create baseline random forest model
 parallelStartSocket(cpus=detectCores())
-random_forest_1 <- randomForest(VAC_PAR ~., data = train, ntree = 50, importance=TRUE, na.action = na.roughfix, maxnodes = 10)
+random_forest_1 <- randomForest(VAC_PAR ~., data = train, ntree = 13, importance=TRUE, na.action = na.roughfix, maxnodes = 5)
 preds_1 = predict(random_forest_1,test[,-1])
 parallelStop()
 
@@ -89,7 +93,7 @@ rand_seed = 959
 set.seed(rand_seed)
 # create tuned random forest model
 parallelStartSocket(cpus=detectCores())
-random_forest_1_best <- randomForest(VAC_PAR ~., data = train, ntree = 51, importance=TRUE, na.action = na.roughfix, maxnodes = 10, mtry = 5)
+random_forest_1_best <- randomForest(VAC_PAR ~., data = train, ntree = 13, importance=TRUE, na.action = na.roughfix, maxnodes = 5, mtry = 3)
 
 preds_1_best = predict(random_forest_1_best,test[,-1])
 
@@ -107,3 +111,5 @@ test['Tuned_RF_Preds'] = preds_1_best
 test['Tuned_RF_preds_Cut'] = preds_1_cut_best
 
 write.csv(test, 'RF_test_out.csv')
+
+saveRDS(random_forest_1_best, "./final_model.rds")
