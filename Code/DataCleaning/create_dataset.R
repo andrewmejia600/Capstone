@@ -5,8 +5,8 @@ library(dplyr)
 library(BBmisc)
 
 # gis_file_direct = '/home/andrew/Desktop/Dallas Files/GIS_PACKAGE_FILES_TO_CSV/'
-gis_file_direct = "/Users/tina/Documents/School/Capstone/Dallas Files/GIS_PACKAGE_FILES_TO_CSV/"
-# file_direct = "C:/SMU_Local/data/capstone/Data/GIS_PACKAGE_FILES_TO_CSV/"
+# gis_file_direct = "/Users/tina/Documents/School/Capstone/Dallas Files/GIS_PACKAGE_FILES_TO_CSV/"
+gis_file_direct = "C:/SMU_Local/data/capstone/Data/GIS_PACKAGE_FILES_TO_CSV/"
 
 #Begin with shape layer of all parcels in Dallas County, limited to the City of Dallas
 dallas_simple = read.csv(file=paste0(gis_file_direct,'Clipped_Parcels_by_Dallas_Simple.csv'), stringsAsFactors = FALSE)
@@ -51,14 +51,7 @@ CPAL_labels["vac_par"] = 1
 # Remove attributes from DCAD_vac_pts.csv except Acct and vac_par
 CPAL_labels = data.frame("Acct"=CPAL_labels$ACCOUNT_NUM, "vac_par" = CPAL_labels$vac_par)
 
-# For future reference:  Detect ambiguous Acct values in DCAD_vac_pts.csv
-# Note, this is not used at this time, since these accounts are not in df and left join should filter them
-CPAL_multiple_accounts = CPAL_labels %>%
-  group_by(Acct) %>%
-  count() %>%
-  filter(n>1)
-
-# Join labels, vac_par=1 to df
+# Join labels, vac_par=1 to df  Note, this also eliminates any duplicate Acct values from CPAL_labels
 df_with_labels = left_join(df,CPAL_labels, by = c("Acct" = "Acct"), keep = FALSE)
 
 ### Add remaining target labels, vac_par=0
@@ -74,7 +67,10 @@ df = df_with_labels
 
 # Read dataframes that were provided by different sources and pre-processed
 
+# Note: clean_DCAD.csv is too large for github so it must be located in gis_file_direct
+
 df_DCAD = read.csv(paste0(gis_file_direct, 'clean_DCAD.csv'), stringsAsFactors = FALSE)
+
 df_311 = read.csv('../../Data/clean_311.csv', stringsAsFactors = FALSE)
 df_bp = read.csv('../../Data/clean_building_permits.csv', stringsAsFactors = FALSE)
 df_CO = read.csv('../../Data/clean_cert_occupancy.csv', stringsAsFactors = FALSE)
@@ -101,27 +97,28 @@ df_complete$impr_val_scaled = normalize(df_complete$impr_val, method="scale")
 df_complete$land_val_scaled = normalize(df_complete$land_val, method="scale")
 df_complete$tot_val_scaled = normalize(df_complete$tot_val, method="scale")
 df_complete$area_sqft_scaled = normalize(df_complete$area_sqft, method="scale")
+#new_df$count_of_311 <- scale(x, center = FALSE)
+
 
 
 # Remove unnecessary columns for modeling
-# Acct, GIS_parcel_ID, Shape*, X vals
+# GIS_parcel_ID, Shape*, X vals
 # c(1:5,7, 20:22, 25, 31, 43:46)
-excluded_vars = c("fid", "Acct", "RecAcs.x", "Shape_STAr.x", "Shape_STLe.x", "gis_parcel_id",
+excluded_vars = c("fid", "RecAcs.x", "Shape_STAr.x", "Shape_STLe.x", "gis_parcel_id",
   "X.x", "Shape_STAr.y", "Shape_STLe.y", "X.y", "X.x.x", "X.y.y", "Shape_STAr",
   "Shape_STLe", "RecAcs.y")
 df_all <- select(df_complete,-one_of(excluded_vars))
-df_all$vac_par = df_complete$vac_par  # Append vac_par annotations to end of dataframe
 
 summary(df_all)
 
 
 df_log_and_scaled <- df_all %>%
-  select(vac_par, num_sptd, num_division_cd, num_nbhd_cd, zoning_buckets, log_impr_val, log_land_val, log_tot_val,
+  select(Acct,vac_par, num_sptd, num_division_cd, num_nbhd_cd, zoning_buckets, log_impr_val, log_land_val, log_tot_val,
          log_area_sqft, count_of_311_scaled, permit_type, count_permits_scaled, days_since_permit_scaled,
          days_from_CO_appro_to_issue_scaled, count_COs_scaled, days_since_issue_scaled, CO_type, sq_ft_scaled,
          occupancy, CO_code_distr, nibrs_crime_against, nibrs_crime_against, count_of_crime_scaled)
 df_not_scaled <- df_all %>%
-  select(vac_par, num_sptd, num_division_cd, num_nbhd_cd, zoning_buckets, impr_val, land_val, tot_val,
+  select(Acct,vac_par, num_sptd, num_division_cd, num_nbhd_cd, zoning_buckets, impr_val, land_val, tot_val,
          area_sqft, count_of_311, permit_type, count_permits, days_since_permit,
          days_from_CO_appro_to_issue, count_COs, days_since_issue, CO_type, sq_ft,
          occupancy, CO_code_distr, nibrs_crime_against, nibrs_crime_against, count_of_crime)

@@ -14,6 +14,9 @@ library(parallelMap)
 if (!require(parallel)) install.packages('parallel')
 library(parallel)
 
+if (!require(dplyr)) install.packages('dplyr')
+library(dplyr)
+
 
 
 #read_data = read.csv('/users/mejiaa/CAPSTONE/Data/df_log_and_scaled.csv')
@@ -22,6 +25,7 @@ read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/
 
 data = read_data
 colnames(data)[1] = "VAC_PAR"
+#data = data %>% select(VAC_PAR, log_impr_val)  # edit here to change factors in different scenarios
 
 #######################################################################################################################
 # read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/Andrew/Data/df_log_and_scaled.csv')##

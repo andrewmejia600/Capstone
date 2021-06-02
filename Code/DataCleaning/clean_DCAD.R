@@ -5,13 +5,15 @@
 
 # account_apprl_year.csv
 # land.csv
+# account_info.csv
 ########################
 
 
 library(dplyr)
 library(tidyverse)
-#file_direct = "C:/SMU_Local/data/capstone/Data/DCAD2019_CURRENT/"
-file_direct = "/Users/tina/Documents/School/Capstone/Dallas Files/DCAD2019_CERTIFIED_07252019/"
+file_direct = "C:/SMU_Local/data/capstone/Data/DCAD2019_CURRENT/"  # Local input files
+#file_direct = "/Users/tina/Documents/School/Capstone/Dallas Files/DCAD2019_CERTIFIED_07252019/"
+gis_file_direct = "C:/SMU_Local/data/capstone/Data/GIS_PACKAGE_FILES_TO_CSV/"  #Large File Location
 #####################  Prepare land.csv 
 
 land = read.csv(file=paste0(file_direct,'land.csv'), stringsAsFactors = FALSE)
@@ -34,8 +36,17 @@ summary(land)
 # New Feature:  AREA_SQFT
 # Calculate total area of parcel in square feet.  Some parcels are measured in acres.
 
-l=as.numeric(length(land$AREA_SIZE))
+#l=as.numeric(length(land$AREA_SIZE))
 land$AREA_UOM_DESC=as.character(land$AREA_UOM_DESC)
+
+# Convert any negative values of AREA_SIZE or DEPTH_DIM to zero
+
+land = land %>%
+  mutate(AREA_SIZE = ifelse(AREA_SIZE < 0, 0, AREA_SIZE))
+land = land %>%
+  mutate(DEPTH_DIM = ifelse(DEPTH_DIM < 0, 0, DEPTH_DIM))
+
+# Multiply by 43,560 square feet / acre for lots that have acre units of measure.
 
 land = land %>%
   mutate(AREA_SQFT = ifelse(AREA_UOM_DESC=="ACRE", AREA_SIZE*43560,
@@ -157,4 +168,5 @@ df_DCAD$log_area_sqft = log(df_DCAD$area_sqft + 1)
 # Note:  Values include parcels outside of City of Dallas.
 # DCAD continuous factors will be scaled after left join with df in create_dataset.r
 
-write.csv(df_DCAD, '../../Data/clean_DCAD.csv',quote = TRUE,  row.names=FALSE)
+# write.csv(df_DCAD, '../../Data/clean_DCAD.csv',quote = TRUE,  row.names=FALSE)
+write.csv(df_DCAD, file=paste0(gis_file_direct,'clean_DCAD.csv'), quote = TRUE,  row.names=FALSE)
