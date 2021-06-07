@@ -110,6 +110,19 @@ test['BaseLine_RF_preds_Cut'] = preds_1_cut
 test['Tuned_RF_Preds'] = preds_1_best
 test['Tuned_RF_preds_Cut'] = preds_1_cut_best
 
+#generate ROC curve
+myPred = prediction(preds_1_best,test[,1])
+
+
+
+perf = ROCR::performance(myPred,"tpr","fpr")
+#calculate AUC
+auc = ROCR::performance(myPred, measure="auc")
+auc_score = auc@y.values[[1]]
+
+#plot the curve
+plot(perf,main=paste0("RF ROC curve: AUC= ",auc_score), xlim=c(0,0.95), ylim=c(.55,1),colorize=TRUE)
+
 write.csv(test, 'RF_test_out.csv')
 
 saveRDS(random_forest_1_best, "./RF_final_model.rds")
