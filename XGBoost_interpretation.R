@@ -10,6 +10,7 @@ library(xgboost)
 
 xgb_model = readRDS('XG_final_model.rds', refhook = NULL)
 
+#need to have loaded dtrain from the model test/train split to get the comparisons
 shap_values <- shap.values(xgb_model = xgboost_best, X_train = dtrain)
 shap_values$mean_shap_score
 
