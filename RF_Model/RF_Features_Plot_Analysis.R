@@ -20,7 +20,7 @@ kde_plots = function(df,.x_var, .y_var){
                  size = .5,
                  adjust = 4)
  
-  p + ggtitle("Kernel Density of Classes Based on Feature") +
+  p + ggtitle("Kernel Density of Classes Based on Feature XG-BOOST Model") +
     scale_fill_manual(values=groupColors) +
     theme_minimal()
 }                                                        #
