@@ -43,13 +43,14 @@ plotTable_rf <- table_rf %>%
   mutate(prop = Freq/sum(Freq))
 
 
-ggplot(data = plotTable_rf, mapping = aes(x = Reference, y = Prediction, fill = outcome)) +
+p = ggplot(data = plotTable_rf, mapping = aes(x = Reference, y = Prediction, fill = outcome)) +
   geom_tile() +
   geom_text(aes(label = Freq), vjust = .5, fontface  = "bold", alpha = 1) +
   scale_fill_manual(values = c(Good = "#999999", Bad = "#FF9900")) +
   theme_minimal() +
   xlim(rev(levels(table_rf$Reference)))
 
+p + ggtitle("Random Forest Confusion Matrix")
 
 ############################################################ XG Boost 
 
@@ -58,17 +59,19 @@ read_data_XG['PAR_LABEL_P'] = factor(ifelse(read_data_XG$Tuned_XG_preds_Cut == 1
 
 table_XG <- data.frame(confusionMatrix(read_data_XG$PAR_LABEL_P, read_data_XG$PAR_LABEL_R)$table)
 
-plotTable_XG <- table_XG %>%
+plotTable_XG = table_XG %>%
   mutate(outcome = ifelse(table_XG$Prediction == table_XG$Reference, "Good", "Bad")) %>%
   group_by(Reference) %>%
   mutate(prop = Freq/sum(Freq))
 
 
-ggplot(data = plotTable_XG, mapping = aes(x = Reference, y = Prediction, fill = outcome)) +
+p = ggplot(data = plotTable_XG, mapping = aes(x = Reference, y = Prediction, fill = outcome)) +
   geom_tile() +
   geom_text(aes(label = Freq), vjust = .5, fontface  = "bold", alpha = 1) +
   scale_fill_manual(values = c(Good = "#999999", Bad = "#FF9900")) +
   theme_minimal() +
   xlim(rev(levels(table_XG$Reference)))
+
+p + ggtitle("XG-BOOST Confusion Matrix")
  
 
