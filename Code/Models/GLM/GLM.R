@@ -23,7 +23,7 @@ if (!require(xgboost)) install.packages('xgboost')
 library(xgboost)
 
 
-#read_data = read.csv('/users/mejiaa/CAPSTONE/Data/df_log_and_scaled.csv')
+
 read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/main/Data/df_log_and_scaled.csv')
 #data = do.call(data.frame,lapply(read_data, function(x) replace(x, is.infinite(x),0)))
 
@@ -55,6 +55,20 @@ fitted.results = predict(glm,newdata=test,type='response')
 fitted.results = ifelse(fitted.results > 0.5,1,0)
 
 confusionMatrix(as.factor(fitted.results),as.factor(test$VAC_PAR), positive = "1")
+F_meas(as.factor(fitted.results),as.factor(test$VAC_PAR))
+
+#generate ROC curve
+myPred = prediction(fitted.results,test[,1])
+
+
+
+perf = ROCR::performance(myPred,"tpr","fpr")
+#calculate AUC
+auc = ROCR::performance(myPred, measure="auc")
+auc_score = auc@y.values[[1]]
+
+#plot the curve
+plot(perf,main=paste0("GLM ROC curve: AUC= ",auc_score), xlim=c(0,0.95), ylim=c(.55,1),colorize=TRUE)
 
 
 ############################################################### Best RF compare
@@ -86,6 +100,21 @@ fitted.results = predict(glm,newdata=test,type='response')
 fitted.results = ifelse(fitted.results > 0.5,1,0)
 
 confusionMatrix(as.factor(fitted.results),as.factor(test$VAC_PAR), positive = "1")
+F_meas(as.factor(fitted.results),as.factor(test$VAC_PAR))
+
+#generate ROC curve
+myPred = prediction(fitted.results,test[,1])
+
+
+
+perf = ROCR::performance(myPred,"tpr","fpr")
+#calculate AUC
+auc = ROCR::performance(myPred, measure="auc")
+auc_score = auc@y.values[[1]]
+
+#plot the curve
+plot(perf,main=paste0("GLM ROC curve: AUC= ",auc_score), xlim=c(0,0.95), ylim=c(.55,1),colorize=TRUE)
+
 
 
 save(glm, file = './glmmodel')
