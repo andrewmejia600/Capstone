@@ -1,0 +1,334 @@
+
+R version 4.0.2 (2020-06-22) -- "Taking Off Again"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> if (!require(caret)) install.packages('caret')
+Loading required package: caret
+Loading required package: lattice
+Loading required package: ggplot2
+> library(caret)
+> 
+> if (!require(parallel)) install.packages('parallel')
+Loading required package: parallel
+> library(parallel)
+> 
+> if (!require(e1071)) install.packages('e1071')
+Loading required package: e1071
+> library(e1071)
+> 
+> if (!require(ggplot2)) install.packages('ggplot2')
+> library(ggplot2)
+> 
+> if (!require(ROCR)) install.packages('ROCR')
+Loading required package: ROCR
+> library(ROCR)
+> 
+> if (!require(mlr)) install.packages('mlr')
+Loading required package: mlr
+Loading required package: ParamHelpers
+Warning message: 'mlr' is in 'maintenance-only' mode since July 2019.
+Future development will only happen in 'mlr3'
+(<https://mlr3.mlr-org.com>). Due to the focus on 'mlr3' there might be
+uncaught bugs meanwhile in {mlr} - please consider switching.
+
+Attaching package: ‘mlr’
+
+The following object is masked from ‘package:ROCR’:
+
+    performance
+
+The following object is masked from ‘package:e1071’:
+
+    impute
+
+The following object is masked from ‘package:caret’:
+
+    train
+
+> library(mlr)
+> 
+> if (!require(parallelMap)) install.packages('parallelMap')
+Loading required package: parallelMap
+> library(parallelMap)
+> 
+> if (!require(xgboost)) install.packages('xgboost')
+Loading required package: xgboost
+> library(xgboost)
+> 
+> 
+> 
+> read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/main/Data/df_log_and_scaled.csv')
+> #data = do.call(data.frame,lapply(read_data, function(x) replace(x, is.infinite(x),0)))
+> 
+> data = read_data
+> colnames(data)[1] = "VAC_PAR"
+> 
+> #Test Crime and CO and 311 Significance
+> data = data[,c(1,3,6,7,8,9, 10, 12,21)]
+> 
+> 
+> #### Generate new seed for test train split for actual model from best tune 
+> rand_seed = 959
+> set.seed(rand_seed)
+> train_partition =  createDataPartition(
++   y= data$VAC_PAR,
++   p = .70,
++   list = FALSE
++ )
+> train = data[train_partition,]
+> test =  data[-train_partition,]
+> 
+> glm = glm(formula = VAC_PAR ~ ., data = train, family = binomial(link='logit'))
+Warning message:
+glm.fit: fitted probabilities numerically 0 or 1 occurred 
+> 
+> summary(glm)
+
+Call:
+glm(formula = VAC_PAR ~ ., family = binomial(link = "logit"), 
+    data = train)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-2.6275  -0.0572  -0.0343  -0.0227   4.8080  
+
+Coefficients:
+                       Estimate Std. Error z value Pr(>|z|)    
+(Intercept)            0.378081   0.057597   6.564 5.23e-11 ***
+num_division_cd       -0.663622   0.030864 -21.501  < 2e-16 ***
+log_impr_val          -0.596307   0.007934 -75.155  < 2e-16 ***
+log_land_val           1.814634   0.112949  16.066  < 2e-16 ***
+log_tot_val           -1.578511   0.113585 -13.897  < 2e-16 ***
+log_area_sqft         -0.049881   0.006051  -8.244  < 2e-16 ***
+count_of_311_scaled   -0.330098   0.199952  -1.651   0.0988 .  
+count_permits_scaled  -0.212149   0.029950  -7.083 1.41e-12 ***
+count_of_crime_scaled -0.367251   0.054727  -6.711 1.94e-11 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 130852  on 205113  degrees of freedom
+Residual deviance:  31696  on 205105  degrees of freedom
+AIC: 31714
+
+Number of Fisher Scoring iterations: 10
+
+> 
+> anova(glm, test="Chisq")
+Analysis of Deviance Table
+
+Model: binomial, link: logit
+
+Response: VAC_PAR
+
+Terms added sequentially (first to last)
+
+
+                      Df Deviance Resid. Df Resid. Dev  Pr(>Chi)    
+NULL                                 205113     130852              
+num_division_cd        1    12787    205112     118065 < 2.2e-16 ***
+log_impr_val           1    84550    205111      33515 < 2.2e-16 ***
+log_land_val           1     1345    205110      32170 < 2.2e-16 ***
+log_tot_val            1      254    205109      31917 < 2.2e-16 ***
+log_area_sqft          1       58    205108      31859 3.034e-14 ***
+count_of_311_scaled    1        4    205107      31855   0.05558 .  
+count_permits_scaled   1      110    205106      31746 < 2.2e-16 ***
+count_of_crime_scaled  1       50    205105      31696 1.902e-12 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Warning messages:
+1: glm.fit: fitted probabilities numerically 0 or 1 occurred 
+2: glm.fit: fitted probabilities numerically 0 or 1 occurred 
+3: glm.fit: fitted probabilities numerically 0 or 1 occurred 
+4: glm.fit: fitted probabilities numerically 0 or 1 occurred 
+> 
+> fitted.results = predict(glm,newdata=test,type='response')
+> fitted.results = ifelse(fitted.results > 0.5,1,0)
+> 
+> confusionMatrix(as.factor(fitted.results),as.factor(test$VAC_PAR), positive = "1")
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     0     1
+         0 76867   214
+         1  2423  8402
+                                          
+               Accuracy : 0.97            
+                 95% CI : (0.9689, 0.9711)
+    No Information Rate : 0.902           
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.8477          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.97516         
+            Specificity : 0.96944         
+         Pos Pred Value : 0.77617         
+         Neg Pred Value : 0.99722         
+             Prevalence : 0.09801         
+         Detection Rate : 0.09558         
+   Detection Prevalence : 0.12314         
+      Balanced Accuracy : 0.97230         
+                                          
+       'Positive' Class : 1               
+                                          
+> F_meas(as.factor(fitted.results),as.factor(test$VAC_PAR))
+[1] 0.9831363
+> 
+> #generate ROC curve
+> myPred = prediction(fitted.results,test[,1])
+> 
+> 
+> 
+> perf = ROCR::performance(myPred,"tpr","fpr")
+> #calculate AUC
+> auc = ROCR::performance(myPred, measure="auc")
+> auc_score = auc@y.values[[1]]
+> 
+> #plot the curve
+> plot(perf,main=paste0("GLM ROC curve: AUC= ",auc_score), xlim=c(0,0.95), ylim=c(.55,1),colorize=TRUE)
+> 
+> 
+> ############################################################### Best RF compare
+> data = read_data
+> colnames(data)[1] = "VAC_PAR"
+> 
+> #Simpler model features. 
+> data = data[,c(1,3,6,7,8,9)]
+> 
+> 
+> #### Generate new seed for test train split for actual model from best tune 
+> rand_seed = 959
+> set.seed(rand_seed)
+> train_partition =  createDataPartition(
++   y= data$VAC_PAR,
++   p = .70,
++   list = FALSE
++ )
+> train = data[train_partition,]
+> test =  data[-train_partition,]
+> 
+> glm = glm(formula = VAC_PAR ~ ., data = train, family = binomial(link='logit'))
+Warning message:
+glm.fit: fitted probabilities numerically 0 or 1 occurred 
+> 
+> summary(glm)
+
+Call:
+glm(formula = VAC_PAR ~ ., family = binomial(link = "logit"), 
+    data = train)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-2.6085  -0.0573  -0.0346  -0.0232   4.6666  
+
+Coefficients:
+                 Estimate Std. Error z value Pr(>|z|)    
+(Intercept)      0.239958   0.055943   4.289 1.79e-05 ***
+num_division_cd -0.644828   0.030582 -21.085  < 2e-16 ***
+log_impr_val    -0.598798   0.007910 -75.704  < 2e-16 ***
+log_land_val     1.771195   0.112147  15.793  < 2e-16 ***
+log_tot_val     -1.533058   0.112790 -13.592  < 2e-16 ***
+log_area_sqft   -0.045055   0.005988  -7.524 5.31e-14 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 130852  on 205113  degrees of freedom
+Residual deviance:  31859  on 205108  degrees of freedom
+AIC: 31871
+
+Number of Fisher Scoring iterations: 10
+
+> 
+> anova(glm, test="Chisq")
+Analysis of Deviance Table
+
+Model: binomial, link: logit
+
+Response: VAC_PAR
+
+Terms added sequentially (first to last)
+
+
+                Df Deviance Resid. Df Resid. Dev  Pr(>Chi)    
+NULL                           205113     130852              
+num_division_cd  1    12787    205112     118065 < 2.2e-16 ***
+log_impr_val     1    84550    205111      33515 < 2.2e-16 ***
+log_land_val     1     1345    205110      32170 < 2.2e-16 ***
+log_tot_val      1      254    205109      31917 < 2.2e-16 ***
+log_area_sqft    1       58    205108      31859 3.034e-14 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Warning message:
+glm.fit: fitted probabilities numerically 0 or 1 occurred 
+> 
+> fitted.results = predict(glm,newdata=test,type='response')
+> fitted.results = ifelse(fitted.results > 0.5,1,0)
+> 
+> confusionMatrix(as.factor(fitted.results),as.factor(test$VAC_PAR), positive = "1")
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     0     1
+         0 76771   190
+         1  2519  8426
+                                         
+               Accuracy : 0.9692         
+                 95% CI : (0.968, 0.9703)
+    No Information Rate : 0.902          
+    P-Value [Acc > NIR] : < 2.2e-16      
+                                         
+                  Kappa : 0.8444         
+                                         
+ Mcnemar's Test P-Value : < 2.2e-16      
+                                         
+            Sensitivity : 0.97795        
+            Specificity : 0.96823        
+         Pos Pred Value : 0.76985        
+         Neg Pred Value : 0.99753        
+             Prevalence : 0.09801        
+         Detection Rate : 0.09585        
+   Detection Prevalence : 0.12451        
+      Balanced Accuracy : 0.97309        
+                                         
+       'Positive' Class : 1              
+                                         
+> F_meas(as.factor(fitted.results),as.factor(test$VAC_PAR))
+[1] 0.9826625
+> 
+> #generate ROC curve
+> myPred = prediction(fitted.results,test[,1])
+> 
+> 
+> 
+> perf = ROCR::performance(myPred,"tpr","fpr")
+> #calculate AUC
+> auc = ROCR::performance(myPred, measure="auc")
+> auc_score = auc@y.values[[1]]
+> 
+> #plot the curve
+> plot(perf,main=paste0("GLM ROC curve: AUC= ",auc_score), xlim=c(0,0.95), ylim=c(.55,1),colorize=TRUE)
+> 
+> 
+> 
+> save(glm, file = './glmmodel')
+> 
