@@ -57,6 +57,8 @@ fitted.results = ifelse(fitted.results > 0.5,1,0)
 confusionMatrix(as.factor(fitted.results),as.factor(test$VAC_PAR), positive = "1")
 F_meas(as.factor(fitted.results),as.factor(test$VAC_PAR))
 
+test['Preds'] = fitted.results
+
 #generate ROC curve
 myPred = prediction(fitted.results,test[,1])
 
@@ -71,7 +73,32 @@ auc_score = auc@y.values[[1]]
 plot(perf,main=paste0("GLM ROC curve: AUC= ",auc_score), xlim=c(0,0.95), ylim=c(.55,1),colorize=TRUE)
 
 
-############################################################### Best RF compare
+############################################################ All CO and Crime Features CF
+
+test['PAR_LABEL_R'] = factor(ifelse(test$VAC_PAR == 1, "VAC", "NVAC"))
+test['PAR_LABEL_P'] = factor(ifelse(test$Preds == 1, "VAC", "NVAC"))
+
+table_XG <- data.frame(confusionMatrix(test$PAR_LABEL_P, test$PAR_LABEL_R)$table)
+
+plotTable_XG = table_XG %>%
+  mutate(outcome = ifelse(table_XG$Prediction == table_XG$Reference, "Good", "Bad")) %>%
+  group_by(Reference) %>%
+  mutate(prop = Freq/sum(Freq))
+
+
+p = ggplot(data = plotTable_XG, mapping = aes(x = Reference, y = Prediction, fill = outcome)) +
+  geom_tile() +
+  geom_text(aes(label = Freq), vjust = .5, fontface  = "bold", alpha = 1) +
+  scale_fill_manual(values = c(Good = "#999999", Bad = "#FF9900")) +
+  theme_minimal() +
+  xlim(rev(levels(table_XG$Reference)))
+
+p + ggtitle("GLM Confusion Matrix")
+
+
+
+
+############################################################### Best RF features compare
 data = read_data
 colnames(data)[1] = "VAC_PAR"
 
@@ -102,6 +129,8 @@ fitted.results = ifelse(fitted.results > 0.5,1,0)
 confusionMatrix(as.factor(fitted.results),as.factor(test$VAC_PAR), positive = "1")
 F_meas(as.factor(fitted.results),as.factor(test$VAC_PAR))
 
+test['Preds'] = fitted.results
+
 #generate ROC curve
 myPred = prediction(fitted.results,test[,1])
 
@@ -114,6 +143,30 @@ auc_score = auc@y.values[[1]]
 
 #plot the curve
 plot(perf,main=paste0("GLM ROC curve: AUC= ",auc_score), xlim=c(0,0.95), ylim=c(.55,1),colorize=TRUE)
+
+############################################################ All CO and Crime Features CF
+
+test['PAR_LABEL_R'] = factor(ifelse(test$VAC_PAR == 1, "VAC", "NVAC"))
+test['PAR_LABEL_P'] = factor(ifelse(test$Preds == 1, "VAC", "NVAC"))
+
+table_XG <- data.frame(confusionMatrix(test$PAR_LABEL_P, test$PAR_LABEL_R)$table)
+
+plotTable_XG = table_XG %>%
+  mutate(outcome = ifelse(table_XG$Prediction == table_XG$Reference, "Good", "Bad")) %>%
+  group_by(Reference) %>%
+  mutate(prop = Freq/sum(Freq))
+
+
+p = ggplot(data = plotTable_XG, mapping = aes(x = Reference, y = Prediction, fill = outcome)) +
+  geom_tile() +
+  geom_text(aes(label = Freq), vjust = .5, fontface  = "bold", alpha = 1) +
+  scale_fill_manual(values = c(Good = "#999999", Bad = "#FF9900")) +
+  theme_minimal() +
+  xlim(rev(levels(table_XG$Reference)))
+
+p + ggtitle("GLM Confusion Matrix")
+
+
 
 
 
