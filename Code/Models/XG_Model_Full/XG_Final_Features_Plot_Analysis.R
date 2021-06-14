@@ -27,12 +27,12 @@ kde_plots = function(df,.x_var, .y_var){
 #
 ##########################################################
 
-read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/main/Code/Models/XG_Model/XG_test_out.csv')
+read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/main/Code/Models/XG_Model_Full/XG_test_out.csv')
 
 read_data['Class'] = factor(ifelse(read_data$VAC_PAR == 1, "VAC", "NVAC"))
 read_data$num_division_cd = factor(read_data$num_division_cd)
 
-data = read_data[,c(2:10)]
+data = read_data[,c(2:25)]
 
 
 
@@ -43,7 +43,11 @@ kde_plots(data,log_land_val, Class)
 kde_plots(data,log_area_sqft, Class)
 kde_plots(data,log_tot_val, Class)
 
-
+kde_plots(data, zoning_buckets,Class)
+kde_plots(data, num_sptd, Class)
+kde_plots(data, permit_type, Class)
+kde_plots(data, num_nbhd_cd, Class)
+kde_plots(data, days_since_permit_scaled, Class)
 
 
 
