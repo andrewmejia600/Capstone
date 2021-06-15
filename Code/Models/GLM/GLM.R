@@ -22,6 +22,9 @@ library(parallelMap)
 if (!require(xgboost)) install.packages('xgboost')
 library(xgboost)
 
+if (!require(dplyr)) install.packages('dplyr')
+library(dplyr)
+
 
 
 read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/main/Data/df_log_and_scaled.csv')
