@@ -43,6 +43,11 @@ train_partition =  createDataPartition(
   list = FALSE
 )
 train = data[train_partition,]
+train_ds = downSample(x = train[, -c(1)],
+                                 y = as.factor(train[,1]))
+colnames(train_ds)[9] = 'VAC_PAR'
+
+train = train_ds
 test =  data[-train_partition,]
 
 glm = glm(formula = VAC_PAR ~ ., data = train, family = binomial(link='logit'))
@@ -115,6 +120,12 @@ train_partition =  createDataPartition(
   list = FALSE
 )
 train = data[train_partition,]
+train_ds = downSample(x = train[, -c(1)],
+                      y = as.factor(train[,1]))
+colnames(train_ds)[6] = 'VAC_PAR'
+
+train = train_ds
+
 test =  data[-train_partition,]
 
 glm = glm(formula = VAC_PAR ~ ., data = train, family = binomial(link='logit'))
