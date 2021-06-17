@@ -51,7 +51,7 @@ p = ggplot(data = plotTable_rf, mapping = aes(x = Reference, y = Prediction, fil
   theme_minimal() +
   xlim(rev(levels(table_rf$Reference)))
 
-p + ggtitle("Random Forest Confusion Matrix")
+p + ggtitle("Random Forest Confusion Matrix") + theme(text = element_text(size=24))
 
 ############################################################ XG Boost 
 
@@ -73,7 +73,7 @@ p = ggplot(data = plotTable_XG, mapping = aes(x = Reference, y = Prediction, fil
   theme_minimal() +
   xlim(rev(levels(table_XG$Reference)))
 
-p + ggtitle("XG-BOOST Confusion Matrix")
+p + ggtitle("XG-BOOST Confusion Matrix") + theme(text = element_text(size=24))
 
 
 ############################################################ XG Boost 
@@ -96,6 +96,6 @@ p = ggplot(data = plotTable_XG, mapping = aes(x = Reference, y = Prediction, fil
   theme_minimal() +
   xlim(rev(levels(table_XG$Reference)))
 
-p + ggtitle("XG-BOOST All Features Confusion Matrix")
+p + ggtitle("XG-BOOST All Features Confusion Matrix") + theme(text = element_text(size=23))
  
 
