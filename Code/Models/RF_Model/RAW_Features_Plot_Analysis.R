@@ -22,9 +22,13 @@ kde_plots = function(df,.x_var, .y_var){
                  size = .9,
                  adjust =20)
   
-  p + ggtitle("Kernel Density of Classes Based on Feature") +
+  p + ggtitle("Kernel Density of Classes") +
     scale_fill_manual(values=groupColors) +
-    theme_minimal()
+    theme_minimal() + theme(text = element_text(size=20), 
+                            axis.title.x = element_text(size=20, face = "bold"),
+                            axis.title.y = element_text(size=20, face = "bold")) + 
+    geom_hline(aes(yintercept = 0)) +
+    geom_vline(aes(xintercept = 0))
 }                                                        #
 #
 ##########################################################
@@ -47,6 +51,9 @@ read_data_not_log_filt_crime = read_data_not_log %>% filter(count_of_crime <= 25
 
 read_data_not_log_filt_311 = read_data_not_log %>% filter(count_of_311 <= 5)
 
+read_data_scaled_filt_crime = read_data %>% filter(count_of_crime_scaled <= 7)
+
+read_data_scaled_filt_311 = read_data %>% filter(count_of_311_scaled <= 7)
 
 kde_plots(read_data,num_sptd, Class)
 kde_plots(read_data,log_impr_val, Class)
@@ -64,6 +71,10 @@ kde_plots(read_data, count_of_crime_scaled, Class)
 kde_plots(read_data_not_log_filt_crime, count_of_crime, Class)
 
 kde_plots(read_data_not_log_filt_311,count_of_311, Class)
+
+kde_plots(read_data_scaled_filt_crime, count_of_crime_scaled, Class)
+
+kde_plots(read_data_scaled_filt_311,count_of_311_scaled, Class)
 
 
 
