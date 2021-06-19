@@ -25,6 +25,9 @@ library(xgboost)
 if (!require(dplyr)) install.packages('dplyr')
 library(dplyr)
 
+if (!require(aod)) install.packages('aod')
+library(aod)
+
 
 
 read_data = read.csv('https://raw.githubusercontent.com/andrewmejia600/Capstone/main/Data/df_log_and_scaled.csv')
@@ -57,7 +60,13 @@ glm = glm(formula = VAC_PAR ~ ., data = train, family = binomial(link='logit'))
 
 summary(glm)
 
-anova(glm, test="Chisq")
+#anova(glm, test="LR")
+
+wald.test(b = coef(glm), Sigma = vcov(glm), Terms = 7)
+wald.test(b = coef(glm), Sigma = vcov(glm), Terms = 8)
+wald.test(b = coef(glm), Sigma = vcov(glm), Terms = 9)
+wald.test(b = coef(glm), Sigma = vcov(glm), Terms = 2:9)
+wald.test(b = coef(glm), Sigma = vcov(glm), Terms = 7:9)
 
 fitted.results = predict(glm,newdata=test,type='response')
 fitted.results = ifelse(fitted.results > 0.5,1,0)
@@ -135,7 +144,10 @@ glm = glm(formula = VAC_PAR ~ ., data = train, family = binomial(link='logit'))
 
 summary(glm)
 
-anova(glm, test="Chisq")
+#anova(glm, test="LR")
+wald.test(b = coef(glm), Sigma = vcov(glm), Terms = 6)
+
+wald.test(b = coef(glm), Sigma = vcov(glm), Terms = 2:6)
 
 fitted.results = predict(glm,newdata=test,type='response')
 fitted.results = ifelse(fitted.results > 0.5,1,0)
