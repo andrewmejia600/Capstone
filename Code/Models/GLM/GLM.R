@@ -60,7 +60,6 @@ glm = glm(formula = VAC_PAR ~ ., data = train, family = binomial(link='logit'))
 
 summary(glm)
 
-#anova(glm, test="LR")
 
 wald.test(b = coef(glm), Sigma = vcov(glm), Terms = 7)
 wald.test(b = coef(glm), Sigma = vcov(glm), Terms = 8)
@@ -140,16 +139,16 @@ train = train_ds
 
 test =  data[-train_partition,]
 
-glm = glm(formula = VAC_PAR ~ ., data = train, family = binomial(link='logit'))
+glm_s = glm(formula = VAC_PAR ~ ., data = train, family = binomial(link='logit'))
 
-summary(glm)
+summary(glm_s)
 
-#anova(glm, test="LR")
-wald.test(b = coef(glm), Sigma = vcov(glm), Terms = 6)
 
-wald.test(b = coef(glm), Sigma = vcov(glm), Terms = 2:6)
+wald.test(b = coef(glm_s), Sigma = vcov(glm_s), Terms = 6)
 
-fitted.results = predict(glm,newdata=test,type='response')
+wald.test(b = coef(glm_s), Sigma = vcov(glm_s), Terms = 2:6)
+
+fitted.results = predict(glm_s,newdata=test,type='response')
 fitted.results = ifelse(fitted.results > 0.5,1,0)
 
 confusionMatrix(as.factor(fitted.results),as.factor(test$VAC_PAR), positive = "1")
@@ -194,6 +193,4 @@ p + ggtitle("GLM Confusion Matrix")
 
 
 
-
-
-save(glm, file = './glmmodel')
+save(glm_s, file = './glmmodel')
